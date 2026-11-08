@@ -64,23 +64,6 @@
     linear-gradient(0deg, rgba(11, 13, 14, 0.92) 0%, rgba(11, 13, 14, 0.2) 55%, transparent 75%);
 }
 
-/* ---------- Meta row ---------- */
-.meta {
-  position: absolute;
-  top: calc(var(--header-h) + 22px);
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  font-family: var(--font-display);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(244, 246, 243, 0.6);
-}
-
 /* ---------- Headline + bottom row ---------- */
 .content {
   position: absolute;
@@ -335,10 +318,6 @@
 }
 
 @media (max-width: 1023px) {
-  .metaMid {
-    display: none;
-  }
-
   .reel {
     display: none;
   }

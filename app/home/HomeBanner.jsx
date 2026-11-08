@@ -45,12 +45,6 @@ export default function HomeBanner() {
         <motion.span className={styles.dim} style={{ opacity: dim }} aria-hidden="true" />
         <span className={styles.vignette} aria-hidden="true" />
 
-        <div className={`container ${styles.meta}`} aria-hidden="true">
-          <span className={styles.in} style={{ "--s": 0 }}>[ N°01 — Commercial digital screens ]</span>
-          <span className={`${styles.in} ${styles.metaMid}`} style={{ "--s": 1 }}>Indoor / LED / Outdoor / Standees</span>
-          <span className={styles.in} style={{ "--s": 2 }}>©{new Date().getFullYear()}</span>
-        </div>
-
         <motion.div className={`container ${styles.content}`} style={{ y: textY, opacity: textOpacity }}>
           <h1 id="hero-title" className={styles.title}>
             <span className={styles.line}><span style={{ "--s": 1 }}>Screens built</span></span>
