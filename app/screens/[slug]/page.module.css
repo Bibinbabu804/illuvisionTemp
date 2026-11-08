@@ -1,0 +1,152 @@
+.top {
+  padding-top: calc(var(--header-h) + 40px);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+  margin-top: 24px;
+}
+
+.galleryCol {
+  position: sticky;
+  top: calc(var(--header-h) + 24px);
+}
+
+.h2 {
+  font-size: clamp(1.6rem, 1.6vw + 1rem, 2.4rem);
+  letter-spacing: -0.025em;
+  margin-bottom: 28px;
+}
+
+.specs {
+  padding-top: clamp(56px, 7vw, 96px);
+}
+
+.keySpecs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keySpecs li {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.keySpecs span {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+.keySpecs strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.keySpecs strong[data-pending="true"],
+.specTable dd[data-pending="true"] {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.keySpecs strong[data-pending="true"] {
+  font-size: 1rem;
+}
+
+.details {
+  max-width: 920px;
+}
+
+.specTable {
+  display: grid;
+  margin: 0;
+}
+
+.specTable div {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.specTable dt {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.specTable dd {
+  margin: 0;
+}
+
+.related {
+  background: var(--paper-2);
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .galleryCol {
+    position: static;
+  }
+
+  .keySpecs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .relatedGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .relatedGrid > li:nth-child(3) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .top {
+    padding-top: calc(var(--header-h) + 28px);
+  }
+
+  .relatedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .relatedGrid > li:nth-child(3) {
+    display: block;
+  }
+
+  .specTable div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 359px) {
+  .keySpecs {
+    grid-template-columns: 1fr;
+  }
+}

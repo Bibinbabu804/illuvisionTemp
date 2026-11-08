@@ -1,0 +1,98 @@
+.section {
+  position: relative;
+  height: 260vh;
+  background: var(--ink);
+  color: var(--text-inv);
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(11, 13, 14, 0.85) 0%, rgba(11, 13, 14, 0.1) 50%, rgba(11, 13, 14, 0.25) 100%);
+}
+
+.words {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding-inline: var(--gutter);
+  pointer-events: none;
+}
+
+.words span {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 8.6vw, 9.5rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.words span:last-child {
+  color: var(--green);
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(32px, 6vw, 72px);
+  z-index: 2;
+}
+
+.kicker {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: rgba(244, 246, 243, 0.7);
+}
+
+.big {
+  margin-top: 14px;
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.6vw, 4.6rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+@media (max-width: 767px) {
+  .section {
+    height: 200vh;
+  }
+
+  .words {
+    flex-direction: column;
+    align-items: center;
+    gap: 46vh;
+  }
+}

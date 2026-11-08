@@ -1,0 +1,88 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+
+.formCard {
+  padding: clamp(20px, 3.5vw, 44px);
+}
+
+.aside {
+  display: grid;
+  gap: 24px;
+}
+
+.h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.035em;
+}
+
+.list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: flex;
+  gap: 14px;
+}
+
+.list li > div {
+  display: grid;
+}
+
+.list span {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.shortcuts {
+  display: grid;
+  gap: 10px;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  transition:
+    box-shadow var(--t-med) var(--ease-out),
+    transform var(--t-med) var(--ease-out);
+}
+
+.shortcut:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-md);
+}
+
+.shortcut strong {
+  display: block;
+  color: var(--text);
+}
+
+.shortcut > svg:first-child {
+  color: var(--green-700);
+  flex: none;
+}
+
+.shortcut > svg:last-child {
+  margin-left: auto;
+  flex: none;
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

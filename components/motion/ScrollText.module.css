@@ -1,0 +1,36 @@
+.text {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.1vw, 4.4rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
+}
+
+.word {
+  display: inline;
+}
+
+.word > span {
+  display: inline;
+}
+
+.chip {
+  position: relative;
+  display: inline-block;
+  width: 2.4em;
+  height: 0.86em;
+  margin: 0 0.04em;
+  vertical-align: -0.06em;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--ink-3);
+}
+
+.chipMedia {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

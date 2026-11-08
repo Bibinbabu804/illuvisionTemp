@@ -1,0 +1,27 @@
+.title {
+  font-size: var(--fs-h2);
+  margin-bottom: 40px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.card {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  padding: 32px;
+}
+
+.card p {
+  color: var(--text-2);
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

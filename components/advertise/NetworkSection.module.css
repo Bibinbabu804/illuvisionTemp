@@ -1,0 +1,22 @@
+.section {
+  background: var(--paper);
+}
+
+.title {
+  margin-top: 18px;
+  font-size: var(--fs-h2);
+}
+
+.skeleton {
+  height: clamp(560px, 76vh, 760px);
+  border-radius: var(--r-xl);
+  background: var(--paper-2);
+  animation: pulse 1.4s var(--ease-in-out) infinite alternate;
+}
+
+/* opacity-only, so it stays on the compositor */
+@keyframes pulse {
+  to {
+    opacity: 0.55;
+  }
+}

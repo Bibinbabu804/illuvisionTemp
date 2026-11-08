@@ -1,0 +1,30 @@
+.nav ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+.nav li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav li + li::before {
+  content: "/";
+  color: var(--line-strong);
+}
+
+.nav a:hover {
+  color: var(--text);
+}
+
+.nav [aria-current] {
+  color: var(--text);
+  font-weight: 500;
+}

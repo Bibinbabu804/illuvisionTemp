@@ -1,0 +1,96 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  pointer-events: none;
+  animation: curtain 700ms var(--ease-in-out) 1050ms forwards;
+}
+
+:global(.intro-done) .intro {
+  display: none;
+}
+
+.mark {
+  position: relative;
+  width: min(68vw, 420px);
+  overflow: hidden;
+}
+
+.logo {
+  clip-path: inset(0 100% 0 0);
+  animation: wipe 900ms var(--ease-out) 120ms forwards;
+}
+
+.sweep {
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 30%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 100%
+  );
+  mix-blend-mode: soft-light;
+  transform: translateX(-120%) skewX(-18deg);
+  animation: sweep 900ms var(--ease-in-out) 520ms forwards;
+}
+
+.bar {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  width: 120px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--paper-2);
+  overflow: hidden;
+  transform: translateX(-50%);
+}
+
+.bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--green);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: load 950ms var(--ease-in-out) 100ms forwards;
+}
+
+@keyframes wipe {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(420%) skewX(-18deg);
+  }
+}
+
+@keyframes load {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes curtain {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    display: none;
+  }
+}

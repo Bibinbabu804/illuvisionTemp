@@ -1,0 +1,136 @@
+.section {
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
+.head {
+  margin-bottom: clamp(40px, 6vw, 72px);
+}
+
+.title {
+  margin-top: 18px;
+  font-size: var(--fs-h2);
+}
+
+.stack {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  position: sticky;
+  top: calc(var(--header-h) + 28px + var(--i) * 22px);
+  height: 74vh;
+  min-height: 460px;
+  max-height: 640px;
+  margin-bottom: 8vh;
+}
+
+.slot:last-child {
+  margin-bottom: 0;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  height: 100%;
+  border-radius: var(--r-xl);
+  background: #16191b;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 -20px 60px -30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  transform-origin: 50% 0%;
+  will-change: transform;
+}
+
+.slot:nth-child(2) .card { background: #1a1e20; }
+.slot:nth-child(3) .card { background: #1d2224; }
+.slot:nth-child(4) .card { background: #212729; }
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(28px, 4vw, 56px);
+}
+
+.num {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(61, 220, 79, 0.7);
+}
+
+.copy h3 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  font-size: clamp(1.6rem, 2.6vw, 2.8rem);
+  letter-spacing: -0.025em;
+}
+
+.icon {
+  flex: none;
+  color: var(--green);
+}
+
+.copy p {
+  margin-top: 16px;
+  max-width: 40ch;
+  color: var(--text-inv-2);
+  font-size: var(--fs-lead);
+}
+
+.media {
+  position: relative;
+  margin: 12px;
+  border-radius: calc(var(--r-xl) - 12px);
+  overflow: hidden;
+}
+
+.img {
+  object-fit: cover;
+}
+
+.dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .slot {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    top: calc(var(--header-h) + 16px + var(--i) * 14px);
+    margin-bottom: 24px;
+  }
+
+  .card {
+    grid-template-columns: 1fr;
+  }
+
+  .media {
+    order: -1;
+    aspect-ratio: 16 / 10;
+  }
+
+  .copy {
+    padding: 20px 22px 26px;
+  }
+
+  .num {
+    display: none;
+  }
+
+  .copy h3 {
+    margin-top: 0;
+  }
+}

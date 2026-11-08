@@ -1,0 +1,232 @@
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 100;
+  padding-top: max(14px, env(safe-area-inset-top));
+  pointer-events: none;
+  transition: transform 600ms var(--ease-out);
+}
+
+.header[data-hidden="true"] {
+  transform: translateY(calc(-100% - 20px));
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pill,
+.actions {
+  pointer-events: auto;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 40px);
+  height: 60px;
+  padding: 0 10px 0 18px;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    box-shadow var(--t-med) var(--ease-out),
+    background-color var(--t-med);
+}
+
+.header[data-scrolled="true"] .pill {
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 12px 30px -12px rgba(11, 13, 14, 0.22);
+}
+
+.brand {
+  display: block;
+  border-radius: 6px;
+}
+
+.logo {
+  width: 150px;
+}
+
+.nav ul {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition:
+    color var(--t-fast),
+    background-color var(--t-fast);
+}
+
+.link:hover {
+  color: var(--text);
+  background: var(--paper);
+}
+
+.link[aria-current="page"] {
+  color: var(--text);
+}
+
+.link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--green);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cta {
+  min-height: 60px;
+  padding: 8px 22px 8px 8px;
+  box-shadow: 0 10px 24px -14px rgba(11, 13, 14, 0.6);
+}
+
+.cta :global(.btn__icon) {
+  width: 44px;
+  height: 44px;
+}
+
+.toggle {
+  display: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--ink);
+  color: var(--text-inv);
+}
+
+/* ---------- Mobile menu ---------- */
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  padding: calc(var(--header-h) + max(28px, env(safe-area-inset-top))) var(--gutter)
+    max(24px, env(safe-area-inset-bottom));
+  background: var(--paper);
+  pointer-events: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  transition:
+    clip-path 600ms var(--ease-in-out),
+    visibility 0s linear 600ms;
+}
+
+.header[data-open="true"] .menu {
+  clip-path: inset(0 0 0 0);
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    clip-path 600ms var(--ease-in-out),
+    visibility 0s;
+}
+
+.menuInner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  gap: 32px;
+}
+
+.menuInner ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.menuInner li,
+.menuCtas {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 400ms var(--ease-out),
+    transform 600ms var(--ease-out);
+}
+
+.header[data-open="true"] .menuInner li,
+.header[data-open="true"] .menuCtas {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(180ms + var(--i) * 60ms);
+}
+
+.menuInner li a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.menuInner li a[aria-current="page"] {
+  color: var(--green-700);
+}
+
+.menuCtas {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+}
+
+@media (max-width: 1023px) {
+  .nav,
+  .cta {
+    display: none;
+  }
+
+  .toggle {
+    display: grid;
+  }
+
+  .pill {
+    height: 56px;
+    padding: 0 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .menu {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .logo {
+    width: 124px;
+  }
+}

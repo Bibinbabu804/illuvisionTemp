@@ -1,0 +1,17 @@
+/* Logo artwork bounds inside the 2172×724 PNG, with a safety margin:
+   x 90→2090, y 170→566 (2000×396). */
+.frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 2000 / 396;
+  overflow: hidden;
+}
+
+.img {
+  position: absolute;
+  left: -4.5%;
+  top: -42.93%;
+  width: 108.6%;
+  max-width: none;
+  height: auto;
+}

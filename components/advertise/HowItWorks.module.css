@@ -1,0 +1,132 @@
+.title {
+  margin-top: 18px;
+  font-size: var(--fs-h2);
+}
+
+.steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps::before {
+  /* connecting line behind the numbers */
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  right: 28px;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px);
+}
+
+.progress {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  right: 28px;
+  height: 2px;
+  background: var(--green-500);
+  transform-origin: left;
+  transform: scaleX(var(--p));
+  z-index: 0;
+}
+
+.step {
+  position: relative;
+  z-index: 1;
+  padding: 0 8px 0 0;
+}
+
+.num {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition:
+    background-color var(--t-med),
+    transform var(--t-med) var(--ease-out);
+}
+
+.step:hover .num {
+  background: var(--green);
+  transform: translateY(-3px);
+}
+
+.step:last-child .num {
+  background: var(--ink);
+  color: var(--green);
+}
+
+.step h3 {
+  margin-top: 24px;
+  font-size: 1.2rem;
+  letter-spacing: -0.015em;
+}
+
+.step p {
+  margin-top: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.footnote {
+  margin-top: 40px;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+@media (max-width: 1023px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .steps::before {
+    top: 28px;
+    bottom: 28px;
+    left: 28px;
+    right: auto;
+    width: 1px;
+    height: auto;
+    background: repeating-linear-gradient(180deg, var(--line-strong) 0 6px, transparent 6px 12px);
+  }
+
+  .progress {
+    top: 28px;
+    bottom: 28px;
+    left: 27px;
+    right: auto;
+    width: 2px;
+    height: auto;
+    transform-origin: top;
+    transform: scaleY(var(--p));
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    column-gap: 20px;
+    padding-bottom: 28px;
+  }
+
+  .num {
+    grid-row: span 2;
+  }
+
+  .step h3 {
+    margin-top: 6px;
+  }
+}

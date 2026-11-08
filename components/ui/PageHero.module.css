@@ -1,0 +1,59 @@
+.hero {
+  padding: calc(var(--header-h) + clamp(40px, 6vw, 80px)) 0 clamp(40px, 5vw, 64px);
+  background: radial-gradient(50% 80% at 90% 0%, rgba(61, 220, 79, 0.12), transparent 70%);
+}
+
+.eyebrow {
+  margin-top: 28px;
+}
+
+.title {
+  margin-top: 18px;
+  max-width: 16ch;
+  font-size: clamp(2.4rem, 5vw + 0.5rem, 5rem);
+  letter-spacing: -0.025em;
+}
+
+.lead {
+  margin-top: 20px;
+  max-width: 52ch;
+  color: var(--text-2);
+  font-size: var(--fs-lead);
+}
+
+.extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.dark {
+  background:
+    radial-gradient(50% 80% at 90% 0%, rgba(61, 220, 79, 0.2), transparent 70%),
+    var(--ink);
+  color: var(--text-inv);
+}
+
+.dark .lead {
+  color: var(--text-inv-2);
+}
+
+.dark :global(.eyebrow) {
+  color: var(--text-inv-2);
+}
+
+.dark nav a,
+.dark nav li {
+  color: var(--text-inv-2);
+}
+
+.dark nav [aria-current] {
+  color: var(--text-inv);
+}
+
+@media (max-width: 479px) {
+  .extra > * {
+    width: 100%;
+  }
+}
