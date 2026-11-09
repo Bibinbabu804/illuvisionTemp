@@ -1,12 +1,17 @@
 import { Suspense } from "react";
-import ScrubText from "@/components/motion/ScrubText";
+import MarqueeRibbons from "@/components/home/MarqueeRibbons";
 import ScreenFinder from "@/components/home/ScreenFinder";
 import SizeVisualizer from "@/components/home/SizeVisualizer";
-import ScreensHero from "@/components/products/ScreensHero";
+import MediaHero from "@/components/ui/MediaHero";
+import Button from "@/components/ui/Button";
+import { videos } from "@/data/media";
+import { EVENTS } from "@/lib/analytics";
 import ProductBrowser from "@/components/products/ProductBrowser";
 import FaqSection from "@/components/home/FaqSection";
+import GalleryWall from "@/components/home/GalleryWall";
+import ScreenStory from "@/components/products/ScreenStory";
 import { faqs } from "@/data/site";
-import { products } from "@/data/catalog";
+import { categories } from "@/data/catalog";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -17,10 +22,21 @@ export const metadata = pageMetadata({
 });
 
 export default function ScreensPage() {
-  const hasSamples = products.some((p) => p.sample);
   return (
     <>
-      <ScreensHero hasSamples={hasSamples} />
+      <MediaHero
+        video={videos.reelRetro}
+        crumbs={[{ label: "Home", href: "/" }, { label: "Screens", href: "/screens" }]}
+        lines={["Find the screen", <>that fits your <em>space.</em></>]}
+        lead="Browse by category, open any screen for details and request a quote with confirmed specifications, pricing and delivery."
+      >
+        <Button href="#browse" variant="light" icon="screen" event={EVENTS.SHOP_CTA} eventProps={{ section: "screens-hero" }}>
+          Browse screens
+        </Button>
+        <Button href="/contact" variant="outline-inv">
+          Talk to the team
+        </Button>
+      </MediaHero>
       <section className="section" id="browse" aria-label="Screen listings">
         <div className="container">
           <Suspense fallback={null}>
@@ -28,9 +44,11 @@ export default function ScreensPage() {
           </Suspense>
         </div>
       </section>
+      <GalleryWall />
+      <ScreenStory />
       <SizeVisualizer />
       <ScreenFinder />
-      <ScrubText words={["Indoor", "LED walls", "Outdoor", "Standees"]} />
+      <MarqueeRibbons panel items={categories.map((c) => c.name)} />
       <FaqSection items={faqs.general} />
     </>
   );

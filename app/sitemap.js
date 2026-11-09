@@ -1,6 +1,8 @@
 import { products } from "@/data/catalog";
 import { absoluteUrl } from "@/lib/seo";
 
+export const dynamic = "force-static";
+
 export default function sitemap() {
   const now = new Date();
   const pages = ["/", "/screens", "/advertise", "/contact"].map((path) => ({

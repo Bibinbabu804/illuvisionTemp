@@ -11,21 +11,20 @@ import Reveal, { SplitHeading } from "./Reveal";
  *   aside   extra content under the lead (buttons, notes)
  *   layout  "split" (heading left, lead right) | "stack"
  */
-export function Kicker({ index, children, className = "" }) {
+export function Kicker({ children, className = "" }) {
   return (
     <span className={`kicker ${className}`}>
-      {index != null && <span className="kicker__index">{String(index).padStart(2, "0")}</span>}
       <span className="kicker__text">{children}</span>
     </span>
   );
 }
 
-export default function SectionHeader({ index, label, lines, id, as = "h2", lead, aside, layout = "split", className = "" }) {
+export default function SectionHeader({ label, lines, id, as = "h2", lead, aside, layout = "split", className = "" }) {
   return (
     <header className={`sh sh--${layout} ${className}`}>
       <div className="sh__main">
         <Reveal>
-          <Kicker index={index}>{label}</Kicker>
+          <Kicker>{label}</Kicker>
         </Reveal>
         <SplitHeading id={id} as={as} lines={lines} className="sh__title" />
       </div>

@@ -1,91 +1,305 @@
+/* animatable integer for the CSS counter */
+@property --pct {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/*
+  Timeline (ms)
+  0–250     dark, point of light appears
+  250–600   point → horizontal line (CRT)
+  600–950   line opens into the screen
+  950–1500  wordmark flickers on with RGB split, locks in
+  1900–2500 zoom through the screen + white light splash
+  2350–2650 loader fades, site is revealed
+*/
 .intro {
+  --bg: #050607;
   position: fixed;
   inset: 0;
   z-index: 150;
   display: grid;
   place-items: center;
-  background: var(--paper);
-  pointer-events: none;
-  animation: curtain 700ms var(--ease-in-out) 1050ms forwards;
+  background: var(--bg);
+  color: var(--text-inv);
+  overflow: hidden;
+  pointer-events: auto;
+  animation: out 300ms ease 2350ms forwards;
 }
 
 :global(.intro-done) .intro {
   display: none;
 }
 
-.mark {
+/* ---------- the display ---------- */
+.stage {
   position: relative;
-  width: min(68vw, 420px);
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  animation: zoom 650ms cubic-bezier(0.7, 0, 0.84, 0) 1900ms forwards;
+}
+
+.screen {
+  position: relative;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: clamp(8px, 1.4vw, 16px);
+  width: min(74vw, 820px);
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 90% at 50% 50%, #12201a 0%, #070a09 70%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 60px rgba(61, 220, 79, 0.25),
+    0 0 160px rgba(61, 220, 79, 0.12);
   overflow: hidden;
+  transform: scale(0.004, 0.004);
+  animation: power 950ms cubic-bezier(0.22, 1, 0.36, 1) 150ms forwards;
 }
 
-.logo {
-  clip-path: inset(0 100% 0 0);
-  animation: wipe 900ms var(--ease-out) 120ms forwards;
-}
-
-.sweep {
-  position: absolute;
-  inset: -20% auto -20% 0;
-  width: 30%;
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.85) 50%,
-    transparent 100%
-  );
-  mix-blend-mode: soft-light;
-  transform: translateX(-120%) skewX(-18deg);
-  animation: sweep 900ms var(--ease-in-out) 520ms forwards;
-}
-
-.bar {
-  position: absolute;
-  left: 50%;
-  bottom: 18%;
-  width: 120px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--paper-2);
-  overflow: hidden;
-  transform: translateX(-50%);
-}
-
-.bar::after {
+/* the bright line/point during power-on sits on top of the screen */
+.screen::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--green);
-  transform: scaleX(0);
-  transform-origin: left;
-  animation: load 950ms var(--ease-in-out) 100ms forwards;
+  z-index: 3;
+  background: #fff;
+  box-shadow: 0 0 40px #fff;
+  animation: phosphor 900ms ease-out 150ms forwards;
 }
 
-@keyframes wipe {
-  to {
-    clip-path: inset(0 0 0 0);
-  }
+/* LED pixel grid */
+.pixels {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.55) 0.9px, transparent 1.3px);
+  background-size: 4px 4px;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
-@keyframes sweep {
-  to {
-    transform: translateX(420%) skewX(-18deg);
-  }
+/* rolling scanline */
+.scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30%;
+  z-index: 2;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(160, 255, 170, 0.08), transparent);
+  animation: scan 1.6s linear 900ms infinite;
+  pointer-events: none;
 }
 
-@keyframes load {
-  to {
-    transform: scaleX(1);
-  }
+/* ---------- wordmark ---------- */
+.word {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 8vw, 6.4rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  animation:
+    flicker 600ms steps(1) 950ms forwards,
+    rgb 700ms cubic-bezier(0.16, 1, 0.3, 1) 950ms both;
 }
 
-@keyframes curtain {
+.word span {
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(61, 220, 79, 0.9), 0 0 60px rgba(61, 220, 79, 0.5);
+}
+
+.tag {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(0.6rem, 1vw, 0.85rem);
+  font-weight: 600;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(244, 246, 243, 0.7);
+  opacity: 0;
+  animation: fade 500ms ease 1450ms forwards;
+}
+
+/* power LED under the display */
+.led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1a2a1e;
+  animation: led 300ms ease 300ms forwards;
+}
+
+/* ---------- counter ---------- */
+.foot {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: clamp(24px, 5vh, 44px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  animation: fadeOut 300ms ease 1850ms forwards;
+}
+
+.label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(244, 246, 243, 0.55);
+}
+
+.count {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 0.8;
+  font-variant-numeric: tabular-nums;
+  color: rgba(244, 246, 243, 0.85);
+  counter-reset: pct var(--pct);
+  animation: count 1700ms cubic-bezier(0.65, 0, 0.35, 1) 100ms forwards;
+}
+
+.count::after {
+  content: counter(pct) "%";
+}
+
+/* ---------- light splash ---------- */
+.flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40vmax;
+  height: 40vmax;
+  margin: -20vmax 0 0 -20vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #f3f4f0 40%, rgba(243, 244, 240, 0) 70%);
+  opacity: 0;
+  transform: scale(0);
+  animation: splash 700ms cubic-bezier(0.22, 1, 0.36, 1) 2000ms forwards;
+  pointer-events: none;
+}
+
+/* ---------- keyframes ---------- */
+@keyframes power {
   0% {
-    transform: translateY(0);
+    transform: scale(0.004, 0.004);
+  }
+  35% {
+    transform: scale(1, 0.006); /* point → line */
+  }
+  55% {
+    transform: scale(1, 0.006);
   }
   100% {
-    transform: translateY(-100%);
+    transform: scale(1, 1); /* line → screen */
+  }
+}
+
+@keyframes phosphor {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes flicker {
+  0% { opacity: 0.9; }
+  10% { opacity: 0.1; }
+  18% { opacity: 1; }
+  26% { opacity: 0.3; }
+  34% { opacity: 1; }
+  52% { opacity: 0.6; }
+  60%,
+  100% { opacity: 1; }
+}
+
+@keyframes rgb {
+  0% {
+    transform: translateX(-6px) skewX(-8deg);
+    text-shadow: -10px 0 rgba(255, 40, 80, 0.9), 10px 0 rgba(40, 140, 255, 0.9);
+  }
+  40% {
+    transform: translateX(3px) skewX(4deg);
+    text-shadow: 5px 0 rgba(255, 40, 80, 0.7), -5px 0 rgba(40, 140, 255, 0.7);
+  }
+  100% {
+    transform: none;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
+  }
+}
+
+@keyframes scan {
+  to {
+    transform: translateY(440%);
+  }
+}
+
+@keyframes led {
+  to {
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green), 0 0 24px rgba(61, 220, 79, 0.6);
+  }
+}
+
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes count {
+  to {
+    --pct: 100;
+  }
+}
+
+/* fly through the screen */
+@keyframes zoom {
+  to {
+    transform: scale(7);
+    filter: brightness(2.2) blur(2px);
+  }
+}
+
+@keyframes splash {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(4.5);
+  }
+}
+
+@keyframes out {
+  to {
+    opacity: 0;
     visibility: hidden;
+    pointer-events: none;
   }
 }
 

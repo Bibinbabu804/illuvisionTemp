@@ -1,15 +1,14 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
 import { motion, useScroll, useTransform, useReducedMotion } from "motion/react";
 import Button from "@/components/ui/Button";
-import Icon from "@/components/ui/Icon";
 import Magnetic from "@/components/motion/Magnetic";
 import LazyVideo from "@/components/motion/LazyVideo";
 import { videos } from "@/data/media";
 import { EVENTS } from "@/lib/analytics";
 import { smoothScrollTo } from "@/components/motion/SmoothScroll";
+import ScreenSpotlight from "./ScreenSpotlight";
 import styles from "./HomeBanner.module.css";
 
 /**
@@ -23,7 +22,6 @@ export default function HomeBanner() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
   const frameScale = useTransform(scrollYProgress, [0, 1], [1, reduce ? 1 : 0.9]);
-  const frameRadius = useTransform(scrollYProgress, [0, 1], [28, 56]);
   const videoY = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "18%"]);
   const textY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -160]);
   const textOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
@@ -31,7 +29,7 @@ export default function HomeBanner() {
 
   return (
     <section ref={ref} className={styles.hero} aria-labelledby="hero-title">
-      <motion.div className={styles.frame} style={{ scale: frameScale, borderRadius: frameRadius }}>
+      <motion.div className={styles.frame} style={{ scale: frameScale }}>
         <motion.div className={styles.media} style={{ y: videoY }}>
           <LazyVideo
             eager
@@ -73,32 +71,7 @@ export default function HomeBanner() {
           </div>
         </motion.div>
 
-        <Link
-          href="#showreel"
-          className={`${styles.reel} ${styles.in}`}
-          style={{ "--s": 6 }}
-          data-cursor="Watch"
-          onClick={(e) => {
-            e.preventDefault();
-            smoothScrollTo("#showreel", { offset: 0 });
-          }}
-        >
-          <span className={styles.reelThumb}>
-            <LazyVideo eager src={videos.reelDream.src} poster={videos.reelDream.poster} className={styles.video} />
-            <span className={styles.reelHud} aria-hidden="true">
-              <i>REC</i>
-              <i>ILLUVISION · REEL 01</i>
-            </span>
-            <span className={styles.reelPlay} aria-hidden="true"><Icon name="play" size={16} /></span>
-          </span>
-          <span className={styles.reelFoot}>
-            <span className={styles.reelText}>
-              <strong>Showreel</strong>
-              <span>{`// Screens in action ©${new Date().getFullYear()}`}</span>
-            </span>
-            <span className={styles.reelArrow} aria-hidden="true"><Icon name="arrow" size={26} strokeWidth={1.4} /></span>
-          </span>
-        </Link>
+        <ScreenSpotlight className={styles.in} style={{ "--s": 6 }} />
 
         <button
           type="button"

@@ -103,14 +103,7 @@
 }
 
 .cta {
-  min-height: 60px;
-  padding: 8px 22px 8px 8px;
   box-shadow: 0 10px 24px -14px rgba(11, 13, 14, 0.6);
-}
-
-.cta :global(.btn__icon) {
-  width: 44px;
-  height: 44px;
 }
 
 .toggle {

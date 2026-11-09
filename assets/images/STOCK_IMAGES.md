@@ -33,3 +33,20 @@ Components only reference these keys, so layouts do not change. Once all images 
 | `blueWall` | Product gallery | [photo-1785227908142-d25091b9eb23](https://images.unsplash.com/photo-1785227908142-d25091b9eb23) | People walking past a wide blue screen showing a beach scene |
 | `ledMacro` | Why Illuvision, product galleries | [photo-1643642969389-6db6b7a0fa56](https://images.unsplash.com/photo-1643642969389-6db6b7a0fa56) | Close-up of LED pixels glowing in multiple colours |
 | `cityBillboards` | Advertise page hero | [photo-1762417582191-e69cd1cb0609](https://images.unsplash.com/photo-1762417582191-e69cd1cb0609) | Bright digital billboards on buildings at night |
+
+### Gallery wall (homepage)
+
+`gallery` array in `data/media.js`, used by the pinned pop-in grid.
+
+| # | Unsplash photo | Description |
+| --- | --- | --- |
+| 1 | [photo-1557858310-9052820906f7](https://images.unsplash.com/photo-1557858310-9052820906f7) | Curved digital billboards above a busy city junction |
+| 2 | [photo-1764795850248-97a5e986b242](https://images.unsplash.com/photo-1764795850248-97a5e986b242) | Retail shelves with portrait digital displays between products |
+| 3 | [photo-1542211183455-2afe6f173cdd](https://images.unsplash.com/photo-1542211183455-2afe6f173cdd) | Dense neon and LED advertising screens on a street at night |
+| 4 | [photo-1740377016309-ec06ae233f7b](https://images.unsplash.com/photo-1740377016309-ec06ae233f7b) | Large digital screen in a shopping mall atrium |
+| 5 | [photo-1496449903678-68ddcb189a24](https://images.unsplash.com/photo-1496449903678-68ddcb189a24) | Neon sign on a brick wall |
+| 6 | [photo-1616418625172-c607e16733ca](https://images.unsplash.com/photo-1616418625172-c607e16733ca) | Wraparound LED advertising screens on a city corner |
+| 7 | [photo-1777458679559-fe54aa736a21](https://images.unsplash.com/photo-1777458679559-fe54aa736a21) | Departure boards and information kiosks in a terminal |
+| 8 | [photo-1632239337119-49dca97da624](https://images.unsplash.com/photo-1632239337119-49dca97da624) | Person walking past a tall vertical LED screen |
+| 9 | [photo-1759256374872-b6082ea0848e](https://images.unsplash.com/photo-1759256374872-b6082ea0848e) | Crowded square surrounded by digital billboards |
+| 10 | [photo-1496442226666-8d4d0e62e6e9](https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9) | Street lined with illuminated billboards at sunset |

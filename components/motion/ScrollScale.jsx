@@ -12,11 +12,10 @@ export default function ScrollScale({ children, from = 0.92 }) {
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "start 0.15"] });
   const scale = useTransform(scrollYProgress, [0, 1], [reduce ? 1 : from, 1]);
-  const radius = useTransform(scrollYProgress, [0, 1], [48, 0]);
   return (
     <motion.div
       ref={ref}
-      style={{ scale, borderRadius: radius, overflow: "clip", transformOrigin: "50% 0%" }}
+      style={{ scale, borderRadius: "var(--r-xl) var(--r-xl) 0 0", overflow: "clip", transformOrigin: "50% 0%" }}
     >
       {children}
     </motion.div>

@@ -23,7 +23,7 @@ const wrap = (min, max, v) => {
  * Giant text row that drifts sideways and speeds up / reverses with
  * scroll velocity. Only animates while on screen.
  */
-export default function VelocityMarquee({ items, baseVelocity = -2.2, outline = false }) {
+export default function VelocityMarquee({ items, baseVelocity = -2.2, outline = false, green = false, dark = false, className = "" }) {
   const ref = useRef(null);
   const inView = useInView(ref, { margin: "100px 0px" });
   const reduce = useReducedMotion();
@@ -56,7 +56,7 @@ export default function VelocityMarquee({ items, baseVelocity = -2.2, outline = 
   );
 
   return (
-    <div ref={ref} className={`${styles.wrap} ${outline ? styles.outline : ""}`} aria-hidden="true">
+    <div ref={ref} className={`${styles.wrap} ${outline ? styles.outline : ""} ${green ? styles.green : ""} ${dark ? styles.dark : ""} ${className}`} aria-hidden="true">
       <motion.div className={styles.track} style={{ x }}>
         {row}
         {row}

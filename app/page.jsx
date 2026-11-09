@@ -12,10 +12,10 @@ import Showcase from "@/components/home/Showcase";
 import SpecGuide from "@/components/home/SpecGuide";
 import NetworkOption from "@/components/home/NetworkOption";
 import FaqSection from "@/components/home/FaqSection";
+import Testimonials from "@/components/home/Testimonials";
 import PageView from "@/components/home/PageView";
 import ScrollScale from "@/components/motion/ScrollScale";
-import ScrubText from "@/components/motion/ScrubText";
-import VelocityMarquee from "@/components/motion/VelocityMarquee";
+import MarqueeRibbons from "@/components/home/MarqueeRibbons";
 import AdIntro from "@/components/advertise/AdIntro";
 import NetworkSection from "@/components/advertise/NetworkSection";
 import Planner from "@/components/advertise/Planner";
@@ -43,10 +43,7 @@ export default function HomePage() {
       <HomeBanner />
       <Statement index={1} />
       <ScrollSequence />
-      <div style={{ paddingBottom: "clamp(40px, 6vw, 80px)" }}>
-        <VelocityMarquee items={names.slice(0, 3)} />
-        <VelocityMarquee items={names.slice(3)} baseVelocity={2.2} outline />
-      </div>
+      <MarqueeRibbons items={names} />
       <CategoryList index={2} />
       <ScreenFinder index={3} />
       <Showreel />
@@ -64,7 +61,8 @@ export default function HomePage() {
       <NetworkSection index={11} />
       <Planner index={12} />
       <HowItWorks index={13} />
-      <ScrubText words={["Project", "your vision", "Screens", "that sell"]} />
+      <MarqueeRibbons panel items={["Project your vision", "Screens that sell", "Indoor to outdoor", "Seen by the room"]} />
+      <Testimonials />
       <FaqSection index={14} items={[...faqs.general, faqs.advertising[0]]} />
     </>
   );

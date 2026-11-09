@@ -69,7 +69,7 @@ export default function Showcase({ index }) {
   };
 
   return (
-    <section className={`section ${styles.section}`} aria-labelledby="showcase-title">
+    <section className="section" aria-labelledby="showcase-title">
       <div className="container">
         <SectionHeader
           index={index}

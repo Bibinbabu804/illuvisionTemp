@@ -139,7 +139,7 @@
   transform: translate3d(0, 110%, 0) rotate(3deg);
   transform-origin: 0 100%;
   animation: rise 1.2s var(--ease-out) forwards;
-  animation-delay: calc(150ms + var(--s) * 110ms);
+  animation-delay: calc(var(--intro-delay) + 150ms + var(--s) * 110ms);
 }
 
 @keyframes rise {
@@ -183,7 +183,7 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 11px;
   background: var(--green);
   color: var(--ink);
   animation: bob 1.8s var(--ease-in-out) infinite;

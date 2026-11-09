@@ -25,11 +25,20 @@ export default function FeaturedProducts({ index }) {
     const measure = () => {
       setPinned(mq.matches);
       const t = trackRef.current;
-      if (t) setDistance(Math.max(0, t.scrollWidth - t.parentElement.clientWidth));
+      if (!t) return;
+      // The viewport has side padding (the gutter): the track must travel
+      // until its right edge meets the viewport's *inner* right edge, so
+      // measure against the content box, not clientWidth (which includes
+      // padding). Otherwise the last card stops short of the screen.
+      const vp = t.parentElement;
+      const cs = getComputedStyle(vp);
+      const inner = vp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      setDistance(Math.max(0, Math.ceil(t.scrollWidth - inner)));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(trackRef.current);
+    ro.observe(trackRef.current.parentElement);
     mq.addEventListener("change", measure);
     return () => {
       ro.disconnect();
@@ -38,9 +47,9 @@ export default function FeaturedProducts({ index }) {
   }, []);
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
-  const rawX = useTransform(scrollYProgress, [0.05, 0.95], [0, -distance]);
+  const rawX = useTransform(scrollYProgress, [0.04, 0.9], [0, -distance]);
   const x = useSpring(rawX, { stiffness: 120, damping: 30, mass: 0.4 });
-  const progress = useTransform(scrollYProgress, [0.05, 0.95], [0, 1]);
+  const progress = useTransform(scrollYProgress, [0.04, 0.9], [0, 1]);
 
   return (
     <section

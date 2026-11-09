@@ -8,7 +8,7 @@ import styles from "./ScrollSequence.module.css";
  * Scroll-scrubbed image sequence (frames extracted from
  * assets/videos/scroll.json into public/videos/sequence). A city goes from
  * day to night as its screens light up; at the end the scene dims and the
- * ILLUVISION wordmark lands.
+ * ILLUVISION wordmark lands. No captions or HUD — just the film and the mark.
  *
  * - Frames load only when the section approaches the viewport.
  * - Phones load every 2nd frame (75 instead of 150).
@@ -17,11 +17,10 @@ import styles from "./ScrollSequence.module.css";
 const TOTAL = 150;
 const src = (i) => `/videos/sequence/frame-${String(i).padStart(3, "0")}.webp`;
 
-const captions = [
-  { from: 0.02, to: 0.26, kicker: "17:30", text: "Daylight. The square is busy, the screens are waiting." },
-  { from: 0.32, to: 0.56, kicker: "19:00", text: "As the sun goes down, the city starts to glow." },
-  { from: 0.62, to: 0.8, kicker: "21:00", text: "Now every screen has the crowd's attention." },
-];
+// Scroll budget: frames play over 0 → END, the wordmark lands by ~0.84,
+// then it holds on screen until the section un-pins at 1.
+const END = 0.7;
+
 
 export default function ScrollSequence() {
   const ref = useRef(null);
@@ -75,12 +74,21 @@ export default function ScrollSequence() {
 
   // ---- canvas sizing ----
   useEffect(() => {
+    // Frames are 720px wide, so a backing store beyond ~1280px only costs
+    // fill-rate (a 2880px canvas was redrawn every scroll step on retina).
+    // CSS scales the canvas up; it looks the same.
+    const MAX_W = 1280;
     const resize = () => {
       const c = canvasRef.current;
       if (!c) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      c.width = Math.round(c.clientWidth * dpr);
-      c.height = Math.round(c.clientHeight * dpr);
+      const scale = Math.min(dpr, MAX_W / Math.max(1, c.clientWidth));
+      const w = Math.round(c.clientWidth * scale);
+      const h = Math.round(c.clientHeight * scale);
+      // mobile URL-bar show/hide fires resize: skip if nothing changed
+      if (w === c.width && h === c.height) return;
+      c.width = w;
+      c.height = h;
       draw(currentRef.current < 0 ? 0 : currentRef.current, true);
     };
     resize();
@@ -101,18 +109,21 @@ export default function ScrollSequence() {
     }
     if (!img) return;
     currentRef.current = index;
-    const ctx = c.getContext("2d");
+    const ctx = c.getContext("2d", { alpha: false });
     const s = Math.max(c.width / img.naturalWidth, c.height / img.naturalHeight);
     const w = img.naturalWidth * s;
     const h = img.naturalHeight * s;
     ctx.drawImage(img, (c.width - w) / 2, (c.height - h) / 2, w, h);
   }
 
-  const frameFor = (p) => Math.min(count - 1, Math.max(0, Math.round(Math.min(p / 0.84, 1) * (count - 1))));
+  const frameFor = (p) => Math.min(count - 1, Math.max(0, Math.round(Math.min(p / END, 1) * (count - 1))));
 
+  // one draw per animation frame, however many scroll events arrive
+  const rafRef = useRef(0);
   useMotionValueEvent(scrollYProgress, "change", (p) => {
-    if (reduce) return;
-    requestAnimationFrame(() => draw(frameFor(p)));
+    if (reduce || (p > END + 0.02 && currentRef.current === count - 1)) return;
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => draw(frameFor(p)));
   });
 
   // redraw once more frames arrive (keeps the current position sharp)
@@ -126,31 +137,27 @@ export default function ScrollSequence() {
   }, [loaded, reduce]);
 
   // ---- overlays ----
-  const zoom = useTransform(scrollYProgress, [0, 0.84], [1.12, 1]);
-  const dim = useTransform(scrollYProgress, [0.8, 0.92], [0.15, 0.72]);
-  const wordScale = useTransform(scrollYProgress, [0.84, 1], [1.6, 1]);
-  const wordOpacity = useTransform(scrollYProgress, [0.84, 0.93], [0, 1]);
-  const wordSpacing = useTransform(scrollYProgress, [0.84, 1], ["0.6em", "0.02em"]);
-  const tagOpacity = useTransform(scrollYProgress, [0.93, 1], [0, 1]);
-  const tagY = useTransform(scrollYProgress, [0.93, 1], [20, 0]);
-  const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  // transform/opacity only (no letter-spacing) so the big glowing wordmark
+  // doesn't re-layout on every scroll frame
+  const zoom = useTransform(scrollYProgress, [0, END], [1.12, 1]);
+  const dim = useTransform(scrollYProgress, [0.64, 0.76], [0.15, 1]);
+  const wordScale = useTransform(scrollYProgress, [0.68, 0.82], [1.35, 1]);
+  const wordOpacity = useTransform(scrollYProgress, [0.68, 0.78], [0, 1]);
+  const tagOpacity = useTransform(scrollYProgress, [0.78, 0.85], [0, 1]);
+  const tagY = useTransform(scrollYProgress, [0.78, 0.85], [20, 0]);
 
   return (
-    <section ref={ref} className={styles.section} style={{ height: reduce ? "100vh" : "420vh" }} aria-label="Illuvision: from day to night">
+    <section ref={ref} className={styles.section} style={{ height: reduce ? "100vh" : "520vh" }} aria-label="Illuvision: from day to night">
       <div className={styles.sticky}>
         <motion.canvas ref={canvasRef} className={styles.canvas} style={{ scale: reduce ? 1 : zoom }} aria-hidden="true" />
-        <motion.span className={styles.dim} style={{ opacity: reduce ? 0.6 : dim }} aria-hidden="true" />
+        <motion.span className={styles.dim} style={{ opacity: reduce ? 1 : dim }} aria-hidden="true" />
         <span className={styles.vignette} aria-hidden="true" />
 
-        {!reduce &&
-          captions.map((c) => (
-            <Caption key={c.kicker} progress={scrollYProgress} {...c} />
-          ))}
 
         <div className={styles.wordWrap}>
           <motion.p
             className={styles.word}
-            style={reduce ? undefined : { scale: wordScale, opacity: wordOpacity, letterSpacing: wordSpacing }}
+            style={reduce ? undefined : { scale: wordScale, opacity: wordOpacity }}
           >
             ILLU<span>V</span>ISION
           </motion.p>
@@ -159,30 +166,7 @@ export default function ScrollSequence() {
           </motion.p>
         </div>
 
-        {!reduce && (
-          <div className={`container ${styles.hud}`} aria-hidden="true">
-            <span>Day</span>
-            <span className={styles.track}>
-              <motion.i style={{ scaleX: bar }} />
-            </span>
-            <span>Night</span>
-            {loaded < count && <span className={styles.loading}>{Math.round((loaded / count) * 100)}%</span>}
-          </div>
-        )}
       </div>
     </section>
-  );
-}
-
-function Caption({ progress, from, to, kicker, text }) {
-  const mid = (from + to) / 2;
-  const opacity = useTransform(progress, [from, from + 0.05, to - 0.05, to], [0, 1, 1, 0]);
-  const y = useTransform(progress, [from, mid, to], [40, 0, -40]);
-  const blur = useTransform(progress, [from, from + 0.05, to - 0.05, to], ["blur(8px)", "blur(0px)", "blur(0px)", "blur(8px)"]);
-  return (
-    <motion.div className={`container on-dark ${styles.caption}`} style={{ opacity, y, filter: blur }}>
-      <p className={styles.time}>{kicker}</p>
-      <p className={styles.capText}>{text}</p>
-    </motion.div>
   );
 }

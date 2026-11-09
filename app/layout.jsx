@@ -46,9 +46,10 @@ export const viewport = {
   viewportFit: "cover",
 };
 
-// Runs before paint: enables JS-only reveal styles and decides whether the
-// brand intro should play (once per session, never for reduced motion).
-const bootScript = `(function(){var d=document.documentElement;d.classList.add('js');try{if(sessionStorage.getItem('ilv-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('intro-done')}else{sessionStorage.setItem('ilv-intro','1')}}catch(e){d.classList.add('intro-done')}})();`;
+// Runs before paint: enables JS-only reveal styles and skips the loader
+// for reduced-motion users. The loader plays on every full page load; once
+// it has lifted, `intro-done` is set so in-app navigations don't wait.
+const bootScript = `(function(){var d=document.documentElement;d.classList.add('js');try{if(matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('intro-done')}else{setTimeout(function(){d.classList.add('intro-done')},5000)}}catch(e){d.classList.add('intro-done')}})();`;
 
 export default function RootLayout({ children }) {
   return (

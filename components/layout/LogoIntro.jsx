@@ -1,20 +1,35 @@
-import Logo from "./Logo";
 import styles from "./LogoIntro.module.css";
 
 /**
- * Brand intro: masked logo reveal + light sweep, then the curtain lifts.
- * Pure CSS (~1.2s), so it never blocks hydration or input. Skipped on
- * repeat visits in the same session and for reduced-motion users by the
- * inline script in app/layout.jsx (adds `intro-done` to <html>).
+ * Site loader — a screen powering on:
+ *  1. a point of light in the dark snaps into a CRT-style line,
+ *  2. the line opens into a glowing 16:9 display (LED pixel grid + scanline),
+ *  3. ILLUVISION flickers on with an RGB split, then locks in (green V),
+ *  4. we zoom through the screen into a white light splash → the site.
+ * Pure CSS (~2.6s) so it never blocks hydration. Plays on each full page
+ * load; skipped for reduced motion (see bootScript in app/layout.jsx).
  */
 export default function LogoIntro() {
   return (
     <div className={`${styles.intro} logo-intro`} aria-hidden="true">
-      <div className={styles.mark}>
-        <Logo className={styles.logo} preload sizes="(max-width: 767px) 70vw, 420px" />
-        <span className={styles.sweep} />
+      <div className={styles.stage}>
+        <div className={styles.screen}>
+          <span className={styles.pixels} />
+          <span className={styles.scan} />
+          <p className={styles.word}>
+            ILLU<span>V</span>ISION
+          </p>
+          <p className={styles.tag}>Project your vision</p>
+        </div>
+        <span className={styles.led} />
       </div>
-      <span className={styles.bar} />
+
+      <div className={styles.foot}>
+        <span className={styles.label}>Powering on</span>
+        <span className={styles.count} />
+      </div>
+
+      <span className={styles.flash} />
     </div>
   );
 }

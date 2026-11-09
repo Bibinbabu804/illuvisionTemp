@@ -92,6 +92,33 @@ export const media = {
   },
 };
 
+/** Gallery wall (home): a separate set so it doesn't repeat other sections. */
+export const gallery = [
+  { src: unsplash("1557858310-9052820906f7"), alt: "Curved digital billboards above a busy city junction" },
+  { src: unsplash("1764795850248-97a5e986b242"), alt: "Retail shelves with portrait digital displays between products" },
+  { src: unsplash("1542211183455-2afe6f173cdd"), alt: "Dense neon and LED advertising screens on a street at night" },
+  { src: unsplash("1740377016309-ec06ae233f7b"), alt: "Large digital screen in a shopping mall atrium" },
+  { src: unsplash("1496449903678-68ddcb189a24"), alt: "Neon sign on a brick wall" },
+  { src: unsplash("1616418625172-c607e16733ca"), alt: "Wraparound LED advertising screens on a city corner" },
+  { src: unsplash("1777458679559-fe54aa736a21"), alt: "Departure boards and information kiosks in a terminal" },
+  { src: unsplash("1632239337119-49dca97da624"), alt: "Person walking past a tall vertical LED screen" },
+  { src: unsplash("1759256374872-b6082ea0848e"), alt: "Crowded square surrounded by digital billboards" },
+  { src: unsplash("1496442226666-8d4d0e62e6e9"), alt: "Street lined with illuminated billboards at sunset" },
+];
+
+/** Scroll stories (/advertise wall of screens, /screens pixel-to-wall). */
+export const storyMedia = {
+  adWall: [
+    { src: unsplash("1575719028439-65ce8662c1cc"), alt: "Row of LED screens showing artwork behind glass" },
+    { src: unsplash("1611382177973-79fa31e065cd"), alt: "Building facade wrapped in glowing blue LED panels" },
+    { src: unsplash("1624532489407-62bdee04c5a4"), alt: "Underpass lined with colourful LED wall panels" },
+    { src: unsplash("1736374726012-8e1b5b16f36e"), alt: "Outdoor billboard screen against a blue sky" },
+    { src: unsplash("1752400748224-a2c39bd3e3a8"), alt: "Close-up of a red and white LED panel" },
+    { src: unsplash("1545164415-0fae860defbd"), alt: "Wall of glowing blue LEDs in perspective" },
+  ],
+  ledMacroBlue: { src: unsplash("1635783101962-e2d7d0a077f0"), alt: "Grid of cyan LEDs on a dark panel" },
+};
+
 export const STOCK_CREDIT = "Temporary stock photography via Unsplash";
 
 /**

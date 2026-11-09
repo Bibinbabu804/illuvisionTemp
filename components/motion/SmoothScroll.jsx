@@ -19,8 +19,10 @@ export default function SmoothScroll() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const lenis = new Lenis({
       autoRaf: true,
-      lerp: 0.09,
+      // 0.1 = smooth but responsive; lower values feel laggy on trackpads
+      lerp: 0.1,
       wheelMultiplier: 1,
+      touchMultiplier: 1,
       syncTouch: false,
       anchors: { offset: -96 },
     });

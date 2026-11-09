@@ -106,3 +106,43 @@ export const faqs = {
     },
   ],
 };
+
+/**
+ * SAMPLE testimonials: placeholders until approved client quotes are
+ * supplied (see `approvals`). Shown with a "Sample testimonial" badge.
+ * `image` is a key from data/media.js (installation photo, not a portrait).
+ */
+export const testimonials = [
+  {
+    quote: "The new menu screens went up over one weekend. Our team updates prices in minutes now, and customers actually read the specials.",
+    name: "Operations Manager",
+    org: "Quick-service restaurant group",
+    tag: "Menu boards",
+    image: "menuBoard",
+    sample: true,
+  },
+  {
+    quote: "The LED wall in our lobby is the first thing visitors photograph. Illuvision handled the sizing, install and handover without a hitch.",
+    name: "Facilities Lead",
+    org: "Corporate headquarters",
+    tag: "LED video wall",
+    image: "indoorVideoWall",
+    sample: true,
+  },
+  {
+    quote: "We put portrait standees at every entrance. Footfall to promoted lines went up within the first month of the campaign.",
+    name: "Retail Marketing Manager",
+    org: "Fashion retailer",
+    tag: "Digital standees",
+    image: "retailScreens",
+    sample: true,
+  },
+  {
+    quote: "Planning the campaign was simple: set a budget, pick the areas, and the team confirmed screens and terms before anything went live.",
+    name: "Brand Manager",
+    org: "Consumer electronics brand",
+    tag: "Advertising",
+    image: "airportAd",
+    sample: true,
+  },
+];

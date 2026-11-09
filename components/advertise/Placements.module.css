@@ -1,0 +1,184 @@
+.muted {
+  color: rgba(244, 246, 243, 0.42);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(12px, 1.4vw, 20px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel {
+  position: relative;
+  display: block;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--ink-3);
+  color: var(--text-inv);
+  isolation: isolate;
+}
+
+.panel:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 4px;
+}
+
+/* ---------- reeded glass ---------- */
+/* --k = horizontal magnification of each rib (1 = clear glass) */
+@property --k {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 2.4;
+}
+
+.glass {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  /* panel height in container units (2:3 → 150cqw) */
+  --h: 150cqw;
+  container-type: inline-size;
+}
+
+.rib {
+  --k: 2.4;
+  --w: calc(100cqw / var(--n)); /* rib width */
+  --c: calc((var(--i) + 0.5) * var(--w)); /* rib centre, panel coords */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--i) * var(--w));
+  /* +1px hides hairline seams between ribs */
+  width: calc(var(--w) + 1px);
+  background-image: var(--img);
+  background-repeat: no-repeat;
+  /* magnify the photo around this rib's centre = fluted refraction */
+  /* image is cropped 2:3, so it is 100cqw × 150cqw at k = 1 */
+  background-size: calc(100cqw * var(--k)) calc(150cqw * (1 + (var(--k) - 1) * 0.03));
+  background-position:
+    calc(var(--w) / 2 - var(--c) * var(--k))
+    calc((var(--h) - 150cqw * (1 + (var(--k) - 1) * 0.03)) / 2);
+  transition: --k 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--i) * 14ms);
+}
+
+/* rib highlight + shadow (the curved glass surface) + a little dimming */
+.rib::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.42) 0%,
+      rgba(255, 255, 255, 0.07) 38%,
+      rgba(255, 255, 255, 0.02) 62%,
+      rgba(0, 0, 0, 0.32) 100%
+    ),
+    rgba(0, 0, 0, 0.12);
+  transition: opacity 700ms ease;
+  transition-delay: inherit;
+}
+
+/* clear the glass */
+.panel:hover .rib,
+.panel:focus-visible .rib {
+  --k: 1;
+}
+
+.panel:hover .rib::after,
+.panel:focus-visible .rib::after {
+  opacity: 0;
+}
+
+/* ---------- text ---------- */
+.shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(11, 13, 14, 0.85) 0%, rgba(11, 13, 14, 0.2) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.num {
+  position: absolute;
+  top: clamp(16px, 1.8vw, 24px);
+  left: clamp(16px, 1.8vw, 24px);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.body {
+  position: absolute;
+  left: clamp(16px, 1.8vw, 24px);
+  right: clamp(16px, 1.8vw, 24px);
+  bottom: clamp(18px, 2vw, 28px);
+  display: grid;
+  gap: 12px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.4vw, 2.3rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(244, 246, 243, 0.85);
+  font-size: var(--fs-sm);
+}
+
+.meta i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 479px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    aspect-ratio: 4 / 5;
+  }
+
+  .glass {
+    --h: 125cqw;
+  }
+}
+
+/* touch: keep a lighter flute so photos still read without hover */
+@media (hover: none) {
+  .rib {
+    --k: 1.5;
+  }
+
+  .rib::after {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rib,
+  .rib::after {
+    transition: none;
+  }
+}

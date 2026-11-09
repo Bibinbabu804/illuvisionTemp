@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "motion/react";
+import { motion, useMotionValue, useSpring } from "motion/react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
@@ -24,9 +24,25 @@ export default function CategoryList({ index }) {
   const sx = useSpring(x, { stiffness: 180, damping: 22, mass: 0.6 });
   const sy = useSpring(y, { stiffness: 180, damping: 22, mass: 0.6 });
 
+  // List position is measured on enter / scroll / resize only — never on
+  // every pointer move (that forced a layout read each frame).
+  const rectRef = useRef(null);
+  const measure = () => {
+    if (listRef.current) rectRef.current = listRef.current.getBoundingClientRect();
+  };
+  useEffect(() => {
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   const onMove = (e) => {
     if (e.pointerType !== "mouse") return;
-    const r = listRef.current.getBoundingClientRect();
+    if (!rectRef.current) measure();
+    const r = rectRef.current;
     x.set(e.clientX - r.left);
     y.set(e.clientY - r.top);
   };
@@ -52,6 +68,7 @@ export default function CategoryList({ index }) {
         <ul
           ref={listRef}
           className={styles.list}
+          onPointerEnter={measure}
           onPointerMove={onMove}
           onPointerLeave={() => setActive(null)}
         >
@@ -64,7 +81,6 @@ export default function CategoryList({ index }) {
                 data-dim={active !== null && active !== i}
                 onPointerEnter={(e) => e.pointerType === "mouse" && setActive(i)}
                 onClick={() => track(EVENTS.SHOP_CTA, { section: "category-list", category: c.slug })}
-                data-cursor="View"
               >
                 <span className={styles.num}>{String(i + 1).padStart(2, "0")}</span>
                 <span className={styles.thumb}>
@@ -79,21 +95,28 @@ export default function CategoryList({ index }) {
             </Reveal>
           ))}
 
-          <motion.div className={styles.preview} style={{ x: sx, y: sy }} aria-hidden="true">
-            <AnimatePresence>
-              {active !== null && (
-                <motion.div
-                  key={active}
-                  className={styles.previewInner}
-                  initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
-                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Image src={categories[active].image.src} alt="" fill sizes="340px" quality={70} className={styles.img} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* All previews are mounted once and cross-fade via CSS, so hovering a
+              new row never re-mounts or re-decodes an image. */}
+          <motion.div
+            className={styles.preview}
+            style={{ x: sx, y: sy }}
+            data-show={active !== null}
+            aria-hidden="true"
+          >
+            <div className={styles.previewInner}>
+              {categories.map((c, i) => (
+                <Image
+                  key={c.slug}
+                  src={c.image.src}
+                  alt=""
+                  fill
+                  sizes="340px"
+                  quality={70}
+                  className={styles.previewImg}
+                  data-active={active === i}
+                />
+              ))}
+            </div>
           </motion.div>
         </ul>
 

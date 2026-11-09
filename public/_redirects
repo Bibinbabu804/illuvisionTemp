@@ -1,0 +1,3 @@
+# Netlify redirects (static export cannot use next.config redirects)
+/home    /    301
+/home/   /    301

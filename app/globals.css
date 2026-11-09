@@ -54,9 +54,11 @@
   /* Layout */
   --container: 1320px;
   --gutter: clamp(16px, 4vw, 40px);
-  --section: clamp(88px, 10vw, 160px);
-  --head-gap: clamp(44px, 5.5vw, 80px);
+  --section: clamp(72px, 8vw, 128px);
+  --head-gap: clamp(36px, 4.5vw, 64px);
   --header-h: 76px;
+  /* page entrances start as the loader curtain lifts (see LogoIntro) */
+  --intro-delay: 2300ms;
 
   /* Shape */
   --r-sm: 10px;
@@ -305,26 +307,16 @@ button {
   white-space: nowrap;
 }
 
-/* bolt glyph before every label */
+/* screen glyph before every section label */
 .kicker::before,
 .eyebrow::before {
   content: "";
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex: none;
   background: var(--green-700);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-
-.kicker__index {
-  color: var(--green-700);
-  font-variant-numeric: tabular-nums;
-}
-
-.kicker__index::after {
-  content: " /";
-  color: var(--text-3);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='13' rx='2'/%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='13' rx='2'/%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .section--dark .kicker,
@@ -341,16 +333,6 @@ button {
   background-color: var(--green);
 }
 
-.section--dark .kicker__index,
-.on-dark .kicker__index {
-  color: var(--green);
-}
-
-.section--dark .kicker__index::after,
-.on-dark .kicker__index::after {
-  color: var(--text-inv-2);
-}
-
 .muted {
   color: var(--text-3);
 }
@@ -365,8 +347,8 @@ button {
 
 /* ---------- Buttons ---------- */
 .btn {
-  --btn-bg: var(--ink);
-  --btn-fg: var(--text-inv);
+  --btn-bg: var(--surface);
+  --btn-fg: var(--ink);
   --btn-icon-bg: var(--green);
   --btn-icon-fg: var(--ink);
   position: relative;
@@ -452,6 +434,11 @@ button {
   transform: scale(0.97);
 }
 
+.btn:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 4px;
+}
+
 .btn--plain {
   padding: 6px 22px;
 }
@@ -459,8 +446,6 @@ button {
 .btn--ghost {
   --btn-bg: transparent;
   --btn-fg: var(--text);
-  --btn-icon-bg: var(--surface);
-  --btn-icon-fg: var(--text);
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
@@ -472,20 +457,18 @@ button {
 .btn--light {
   --btn-bg: var(--surface);
   --btn-fg: var(--ink);
-  --btn-icon-bg: var(--ink);
-  --btn-icon-fg: var(--green);
+  --btn-icon-bg: var(--green);
+  --btn-icon-fg: var(--ink);
 }
 
 .btn--outline-inv {
-  --btn-bg: transparent;
+  --btn-bg: rgba(255, 255, 255, 0.04);
   --btn-fg: var(--text-inv);
-  --btn-icon-bg: rgba(255, 255, 255, 0.1);
-  --btn-icon-fg: var(--text-inv);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(244, 246, 243, 0.36);
 }
 
 .btn--outline-inv:hover {
-  --btn-bg: rgba(255, 255, 255, 0.06);
+  --btn-bg: rgba(255, 255, 255, 0.1);
 }
 
 .btn--block {
@@ -510,6 +493,14 @@ button {
   width: 16px;
   height: 16px;
   margin: -8px 0 0 -8px;
+}
+
+/* very small phones: let long labels wrap instead of overflowing */
+@media (max-width: 379px) {
+  .btn {
+    white-space: normal;
+    text-align: left;
+  }
 }
 
 .btn[disabled] {
@@ -716,20 +707,22 @@ html.js [data-reveal="clip"].is-in {
   display: inline-block;
 }
 
+/* transform + opacity only (compositor) — a blur filter here repainted
+   large headings every frame while scrolling */
 html.js .split-line > span {
   transform: translate3d(0, 110%, 0) rotate(4deg);
   transform-origin: 0 100%;
-  filter: blur(6px);
+  opacity: 0.2;
   transition:
     transform 1.2s var(--ease-out),
-    filter 1.2s var(--ease-out);
+    opacity 0.9s var(--ease-out);
   transition-delay: var(--d, 0ms);
 }
 
 html.js .is-in .split-line > span,
 html.js .split-line.is-in > span {
   transform: none;
-  filter: none;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -904,4 +897,9 @@ textarea.input {
 
 .spotlight:hover::after {
   opacity: 1;
+}
+
+/* loader skipped (reduced motion): entrances start immediately */
+.intro-done {
+  --intro-delay: 0ms;
 }

@@ -1,7 +1,3 @@
-.section {
-  padding-top: 0;
-}
-
 .head {
   margin-bottom: clamp(32px, 4vw, 56px);
 }

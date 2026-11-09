@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, AnimatePresence } from "motion/react";
 import styles from "./Cursor.module.css";
 
@@ -13,6 +13,8 @@ export default function Cursor() {
   const [enabled, setEnabled] = useState(false);
   const [label, setLabel] = useState(null);
   const [visible, setVisible] = useState(false);
+  const visibleRef = useRef(false);
+  const labelRef = useRef(null);
   const x = useMotionValue(-100);
   const y = useMotionValue(-100);
   const sx = useSpring(x, { stiffness: 500, damping: 40, mass: 0.5 });
@@ -29,14 +31,31 @@ export default function Cursor() {
 
   useEffect(() => {
     if (!enabled) return;
+    // Position goes straight to motion values (no React render). React state
+    // only changes when visibility or the hovered label actually changes,
+    // and the label lookup only runs when the pointer enters a new element.
+    let lastTarget = null;
     const move = (e) => {
       x.set(e.clientX);
       y.set(e.clientY);
-      setVisible(true);
+      if (!visibleRef.current) {
+        visibleRef.current = true;
+        setVisible(true);
+      }
+      if (e.target === lastTarget) return;
+      lastTarget = e.target;
       const t = e.target.closest?.("[data-cursor]");
-      setLabel(t ? t.getAttribute("data-cursor") : null);
+      const next = t ? t.getAttribute("data-cursor") : null;
+      if (next !== labelRef.current) {
+        labelRef.current = next;
+        setLabel(next);
+      }
     };
-    const leave = () => setVisible(false);
+    const leave = () => {
+      visibleRef.current = false;
+      lastTarget = null;
+      setVisible(false);
+    };
     window.addEventListener("pointermove", move, { passive: true });
     document.documentElement.addEventListener("pointerleave", leave);
     return () => {

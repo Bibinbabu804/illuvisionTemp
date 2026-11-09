@@ -15,7 +15,7 @@
   gap: 0.35em;
   padding-right: 0.35em;
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 9.5vw, 10rem);
+  font-size: var(--marquee-size, clamp(3.2rem, 9.5vw, 10rem));
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.035em;
@@ -27,7 +27,20 @@
 }
 
 .outline {
-  color: var(--text-3);
+  color: var(--marquee-outline, var(--text-3));
+}
+
+.green {
+  --marquee-outline: rgba(11, 13, 14, 0.55);
+  --marquee-accent: var(--ink);
+  background: var(--green);
+  color: var(--ink);
+}
+
+.dark {
+  --marquee-outline: rgba(244, 246, 243, 0.55);
+  background: var(--marquee-dark-bg, #111416);
+  color: var(--text-inv);
 }
 
 .star {
@@ -35,6 +48,6 @@
   width: 0.32em;
   height: 0.32em;
   border-radius: 0.08em;
-  background: var(--green);
+  background: var(--marquee-accent, var(--green));
   transform: rotate(45deg);
 }

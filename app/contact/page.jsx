@@ -1,5 +1,7 @@
 import Link from "next/link";
-import PageHero from "@/components/ui/PageHero";
+import MediaHero from "@/components/ui/MediaHero";
+import Button from "@/components/ui/Button";
+import { videos } from "@/data/media";
 import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
 import EnquiryForm from "@/components/forms/EnquiryForm";
@@ -24,13 +26,20 @@ export default function ContactPage() {
 
   return (
     <>
-      <PageHero
-        eyebrow="Contact"
-        title="Let's talk screens."
-        lead="Whether you are buying one display or planning a campaign, send us a message and the Illuvision team will get back to you."
+      <MediaHero
+        video={videos.reelDream}
         crumbs={[{ label: "Home", href: "/" }, { label: "Contact", href: "/contact" }]}
-      />
-      <section className="section" style={{ paddingTop: 0 }} aria-label="Contact form and details">
+        lines={["Let's talk", <><em>screens.</em></>]}
+        lead="Whether you are buying one display or planning a campaign, send us a message and the Illuvision team will get back to you."
+      >
+        <Button href="#contact-form" variant="light" icon="chat">
+          Send a message
+        </Button>
+        <Button href="/screens" variant="outline-inv" icon="screen">
+          Explore screens
+        </Button>
+      </MediaHero>
+      <section className="section" id="contact-form" aria-label="Contact form and details">
         <div className={`container ${styles.grid}`}>
           <Reveal className={`card ${styles.formCard}`}>
             <EnquiryForm variant="contact" />

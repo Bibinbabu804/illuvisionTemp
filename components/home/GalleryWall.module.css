@@ -1,0 +1,97 @@
+.section {
+  position: relative;
+  padding-block: var(--section);
+}
+
+/* desktop: long scroll runway, content pinned */
+.section[data-pinned="true"] {
+  height: 280vh;
+  padding-block: 0;
+}
+
+.section[data-pinned="true"] .sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  height: 100svh;
+  padding-top: calc(var(--header-h) + 8px);
+  overflow: hidden;
+}
+
+.sticky > :global(.container) {
+  width: 100%;
+}
+
+.head {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  margin-bottom: clamp(28px, 4vh, 48px);
+  text-align: center;
+}
+
+.title {
+  font-size: var(--fs-h2);
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+.title span {
+  color: var(--text-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(12px, 1.4vw, 22px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* keep two rows inside the pinned viewport */
+.section[data-pinned="true"] .grid {
+  max-width: calc((100svh - var(--header-h) - 220px) * 2.6);
+  margin-inline: auto;
+}
+
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--ink-3);
+  will-change: transform, opacity;
+}
+
+.inner {
+  position: absolute;
+  inset: 0;
+}
+
+.img {
+  object-fit: cover;
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* 10 tiles in 3 columns: hide the last so rows stay full */
+  .tile:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile:last-child {
+    display: block;
+  }
+}
