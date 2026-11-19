@@ -129,6 +129,7 @@ export const STOCK_CREDIT = "Temporary stock photography via Unsplash";
 const vid = (name) => ({ src: `/videos/${name}.mp4`, poster: `/videos/posters/${name}.jpg` });
 
 export const videos = {
+  banner: vid("banner"), // hero: city going from day to night (plays before the scroll film)
   heroCity: vid("vid1"), // night city with digital billboards
   heroMobile: vid("mobvid3"), // portrait neon sign on a crane
   reelDream: vid("vid2"), // neon "Dream" creative

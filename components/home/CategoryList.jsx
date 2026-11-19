@@ -55,7 +55,7 @@ export default function CategoryList({ index }) {
           label="Screen categories"
           id="categories-title"
           lines={["A screen for", "every kind of space."]}
-          lead="Browse by the type of screen you need, from a single reception display to a building-scale façade."
+          lead="Choose your format: a wall mount display, or an A-frame, half-glass or full-glass standee."
           aside={
             categories.some((c) => c.sample) && (
               <p className={styles.note}>
@@ -84,7 +84,7 @@ export default function CategoryList({ index }) {
               >
                 <span className={styles.num}>{String(i + 1).padStart(2, "0")}</span>
                 <span className={styles.thumb}>
-                  <Image src={c.image.src} alt="" fill sizes="96px" quality={60} className={styles.img} />
+                  <Image src={c.image.src} alt="" fill sizes="96px" quality={60} className={styles.img} style={{ objectPosition: c.image.pos }} />
                 </span>
                 <span className={styles.name}>{c.name}</span>
                 <span className={styles.short}>{c.short}</span>
@@ -113,6 +113,7 @@ export default function CategoryList({ index }) {
                   sizes="340px"
                   quality={70}
                   className={styles.previewImg}
+                  style={{ objectPosition: c.image.pos }}
                   data-active={active === i}
                 />
               ))}

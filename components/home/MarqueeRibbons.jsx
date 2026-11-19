@@ -7,10 +7,10 @@ import styles from "./MarqueeRibbons.module.css";
  *   rounded at the bottom only.
  * - `panel`: a standalone rounded dark panel for light pages (e.g. /screens).
  */
-export default function MarqueeRibbons({ items, panel = false }) {
+export default function MarqueeRibbons({ items, panel = false, hidden = false }) {
   const mid = Math.ceil(items.length / 2);
   return (
-    <div className={`${styles.band} ${panel ? styles.panel : ""}`} aria-hidden="true">
+    <div className={`${styles.band} ${panel ? styles.panel : ""} ${hidden ? styles.hidden : ""}`} aria-hidden="true">
       <div className={styles.ribbons}>
         <VelocityMarquee items={items.slice(0, mid)} dark className={`${styles.ribbon} ${styles.back}`} />
         <VelocityMarquee items={items.slice(mid)} baseVelocity={2.2} green className={`${styles.ribbon} ${styles.front}`} />

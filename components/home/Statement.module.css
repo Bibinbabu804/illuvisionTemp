@@ -14,6 +14,11 @@
   max-width: 1120px;
 }
 
+/* a touch smaller than the default ScrollText display size */
+.section .text {
+  font-size: clamp(1.7rem, 3.4vw, 3.6rem);
+}
+
 .float {
   position: absolute;
   z-index: 0;

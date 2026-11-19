@@ -142,6 +142,8 @@
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 4px;
+  /* lets the wordmark size itself to the wall */
+  container-type: inline-size;
   transition:
     transform 1.1s var(--ease),
     gap 600ms ease;
@@ -166,6 +168,69 @@
   opacity: 1;
   transform: none;
   transition-delay: calc(var(--i) * 60ms);
+}
+
+/* lit: the assembled wall powers on like the site loader's screen —
+   deep green-black with a soft glow */
+.stage[data-step="2"] .tile,
+.stage[data-step="3"] .tile {
+  background: radial-gradient(140% 120% at 50% 50%, #12201a 0%, #070a09 75%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 40px rgba(61, 220, 79, 0.22);
+}
+
+/* brand wordmark spanning all nine tiles (white, with the green V) */
+.brand {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* flex keeps ILLU · V · ISION on one line (grid stacked them) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 11.5cqw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity 600ms ease,
+    transform 900ms var(--ease);
+}
+
+.brand span {
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(61, 220, 79, 0.9), 0 0 60px rgba(61, 220, 79, 0.5);
+}
+
+/* LED pixel grid: dots over the screen and the letters */
+.ledGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.6) 0.9px, transparent 1.3px);
+  background-size: 4px 4px;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.stage[data-step="2"] .brand,
+.stage[data-step="3"] .brand,
+.stage[data-step="2"] .ledGrid,
+.stage[data-step="3"] .ledGrid {
+  opacity: 1;
+  transform: none;
+  /* wait for the tiles to snap into place */
+  transition-delay: 650ms;
 }
 
 /* mounted in the room: smaller, higher on the wall, seams closed */

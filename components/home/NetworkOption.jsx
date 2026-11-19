@@ -1,43 +1,61 @@
+import SectionHeader from "@/components/ui/SectionHeader";
 import Reveal from "@/components/ui/Reveal";
 import Button from "@/components/ui/Button";
+import Icon from "@/components/ui/Icon";
+import { ownership } from "@/data/catalog";
 import { site } from "@/data/site";
+import { EVENTS } from "@/lib/analytics";
 import styles from "./NetworkOption.module.css";
 
 /**
- * "Buy & Join Network" vs "Display Only". Hidden until approved via
- * site.features.networkParticipation. Copy is a placeholder for review.
+ * "Founding Partner" vs "Buy Outright": the two ways to get a screen
+ * (customer brochure). Shown when site.features.networkParticipation is on.
  */
 export default function NetworkOption() {
   if (!site.features.networkParticipation) return null;
 
-  const options = [
-    {
-      title: "Buy & Join Network",
-      body: "Own your screen and make it part of Illuvision's associated advertising network. Terms confirmed on enquiry.",
-      cta: "Ask about joining",
-    },
-    {
-      title: "Display Only",
-      body: "Own your screen and use it exclusively for your own content.",
-      cta: "Explore screens",
-    },
-  ];
-
   return (
-    <section className="section" aria-labelledby="network-option-title">
+    <section className={`section ${styles.section}`} id="ways" aria-labelledby="network-option-title">
       <div className="container">
-        <h2 id="network-option-title" className={styles.title}>Two ways to own a screen</h2>
+        <SectionHeader
+          label="Ways to buy"
+          id="network-option-title"
+          lines={["Two ways to", "get your screen."]}
+          lead="Become a Founding Partner and let your screen earn from approved ads, or buy the display outright for your own content only."
+        />
         <div className={styles.grid}>
-          {options.map((o, i) => (
-            <Reveal key={o.title} delay={i * 100} className={`card ${styles.card}`}>
+          {ownership.map((o, i) => (
+            <Reveal key={o.id} delay={i * 100} className={`card ${styles.card}`} data-kind={o.id}>
               <h3>{o.title}</h3>
-              <p>{o.body}</p>
-              <Button href={i ? "/screens" : "/contact?topic=network"} variant={i ? "ghost" : "primary"}>
-                {o.cta}
+              {o.highlight && (
+                <p className={styles.highlight}>
+                  <Icon name="spark" size={18} />
+                  <span>{o.highlight}</span>
+                </p>
+              )}
+              <ul>
+                {o.points.map((point) => (
+                  <li key={point}>
+                    <Icon name="check" size={16} />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                href={o.id === "founding" ? "/contact?topic=network" : "/screens#prices"}
+                variant={o.id === "founding" ? "accent" : "ghost"}
+                event={EVENTS.SHOP_CTA}
+                eventProps={{ section: "ways-to-buy", option: o.id }}
+              >
+                {o.id === "founding" ? "Become a Founding Partner" : "See Buy Outright prices"}
               </Button>
             </Reveal>
           ))}
         </div>
+        <Reveal as="p" className={styles.note}>
+          <Icon name="info" size={18} />
+          Ad video plans are available after the free period for both options.
+        </Reveal>
       </div>
     </section>
   );

@@ -150,3 +150,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Sizes and prices ---------- */
+.prices {
+  padding-top: clamp(48px, 6vw, 80px);
+  scroll-margin-top: var(--header-h);
+}
+
+.pricesLead {
+  margin: -8px 0 20px;
+  color: var(--text-2);
+  max-width: 60ch;
+}

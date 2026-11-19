@@ -2,6 +2,8 @@
   position: relative;
   background: var(--ink);
   color: var(--text-inv);
+  /* --story-tail is the empty strip under the pinned content (set in JS) */
+  margin-bottom: calc(var(--story-tail, 0px) * -1);
 }
 
 .sticky {
@@ -336,13 +338,6 @@
 }
 
 @media (max-width: 479px) {
-  .ctas > * {
-    flex: 1 1 100%;
-  }
-
-  .ctas :global(.btn) {
-    width: 100%;
-  }
 
   .counter {
     display: none;

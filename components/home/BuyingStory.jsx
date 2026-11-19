@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   motion,
@@ -37,8 +37,8 @@ const steps = [
   },
   {
     title: "Choose your format",
-    body: "Wall displays, LED walls, standees or outdoor LED. We help you match the format to the space and the message.",
-    tags: ["Indoor", "LED wall", "Standee", "Outdoor"],
+    body: "Wall mount, A-frame, half-glass or full-glass standee. We help you match the format to the space and the message.",
+    tags: ["Wall mount", "A-frame", "Half-glass", "Full-glass"],
     shape: { width: "36%", height: "86%", radius: 22 },
     stand: "floor",
     glow: "rgba(217, 164, 255, 0.35)",
@@ -98,6 +98,29 @@ export default function BuyingStory({ index }) {
 
   const tilt = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [6, -6]);
 
+  // The pinned frame is a full screen tall with its content centred, so on
+  // tall windows it ends with an empty strip. Measure that strip and let the
+  // next section slide up over it instead of leaving a dead gap.
+  const gridRef = useRef(null);
+  useEffect(() => {
+    const section = ref.current;
+    const grid = gridRef.current;
+    const sticky = grid?.parentElement;
+    if (!section || !grid || !sticky || !("ResizeObserver" in window)) return;
+    const measure = () => {
+      const gap = Math.max(0, sticky.getBoundingClientRect().bottom - grid.getBoundingClientRect().bottom);
+      section.style.setProperty("--story-tail", `${Math.round(gap)}px`);
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(sticky);
+    ro.observe(grid);
+    measure();
+    return () => {
+      ro.disconnect();
+      section.style.removeProperty("--story-tail");
+    };
+  }, []);
+
   return (
     <section ref={ref} className={styles.section} style={{ height: `${steps.length * 100}vh` }} aria-labelledby="story-title">
       <div className={styles.sticky}>
@@ -108,7 +131,7 @@ export default function BuyingStory({ index }) {
           aria-hidden="true"
         />
 
-        <div className={`container on-dark ${styles.grid}`}>
+        <div ref={gridRef} className={`container on-dark ${styles.grid}`}>
           {/* ---------- copy ---------- */}
           <div className={styles.copy}>
             <Kicker index={index}>How buying works</Kicker>

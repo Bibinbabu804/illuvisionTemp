@@ -10,14 +10,16 @@ export const site = {
   name: "Illuvision",
   tagline: "Project your vision",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  // Draft description — pending approval (see `approvals` below).
+  // From the customer brochure.
   description:
-    "Illuvision supplies commercial digital screens for retail, hospitality, corporate and outdoor spaces, and helps businesses advertise on its associated screen network.",
+    "Illuvision supplies digital displays for shops, restaurants, clinics and showrooms across Kerala. Your screen promotes your shop, and can earn from ads.",
 
   /** Contact details: publish only once approved. `null` hides the item. */
   contact: {
     email: null,
-    phone: null,
+    // Both numbers are printed on the customer brochure and price list.
+    phone: "+91 884 845 9136",
+    phone2: "+91 6282 825 277",
     whatsapp: null,
     address: null,
     hours: null,
@@ -34,10 +36,10 @@ export const site = {
 
   /** Feature flags for content that needs a business decision. */
   features: {
-    /** Show "Buy & Join Network" vs "Display Only" options. Needs approval. */
-    networkParticipation: false,
-    /** Show public prices where products have an approved `price`. */
-    publicPricing: false,
+    /** Show the "Founding Partner" vs "Buy Outright" options (customer brochure). */
+    networkParticipation: true,
+    /** Show public prices (Founding Partner Price List 2026). */
+    publicPricing: true,
     /** Enable a Buy Now flow. No commerce integration exists yet. */
     checkout: false,
     /** Show the About link in the header (no approved About content yet). */
@@ -75,20 +77,28 @@ export const approvals = [
 export const faqs = {
   general: [
     {
-      q: "Is the product information on this site final?",
-      a: "Not yet. This is a preview of the new Illuvision website. Product names, specifications and imagery marked as samples will be replaced with the approved catalogue. Please request a quote to get confirmed details for any screen.",
+      q: "How much does a screen cost?",
+      a: "Founding Partner prices start at ₹30,000 for a 32 inch wall mount display. Every format, size and display option is listed in the price list on the Screens page. All prices are before GST; 18% GST is added.",
     },
     {
-      q: "How do I get a price for a screen?",
-      a: "Open any screen and choose Request Quote. Tell us the quantity, where it will be installed and where it needs to be delivered, and the Illuvision team will come back with confirmed pricing and availability.",
+      q: "What is the difference between Founding Partner and Buy Outright?",
+      a: "Founding Partners get the display delivered and installed, 3 months of free screen management, free CMS software while partnered, and can earn a share of ad profit from approved ads. With Buy Outright you own the display 100% for your own content only, and installation and transport are charged separately.",
     },
     {
-      q: "Can you help me choose the right screen?",
-      a: "Yes. Describe the space, viewing distance and what you want to show in the enquiry form, and the team will recommend suitable options.",
+      q: "Which display should I choose, Panasonic or Illuvision?",
+      a: "Panasonic displays offer 4K UHD with HDR (43 inch and above), Google TV, Dolby Audio and a 3-year warranty. Illuvision displays are the budget-friendly option, with HD, Android, Wi-Fi and Bluetooth, and a 1-year warranty.",
     },
     {
-      q: "Which countries do you deliver to?",
-      a: "Delivery markets are being confirmed. Include your delivery location in your enquiry and we will confirm whether we can supply it.",
+      q: "Is the income from ads guaranteed?",
+      a: "No. Earnings depend on approved advertising activity, and no fixed income is promised.",
+    },
+    {
+      q: "What happens after the free 3 months?",
+      a: "Ad video plans are available for both options: Basic at ₹3,499 per month for 4 motion videos, or Growth at ₹5,999 per month for 8 motion videos.",
+    },
+    {
+      q: "Where do you install screens?",
+      a: "Illuvision supplies digital displays for shops, restaurants, clinics and showrooms across Kerala. Call us to book a free shop visit.",
     },
   ],
   advertising: [

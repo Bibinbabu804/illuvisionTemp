@@ -51,6 +51,7 @@ export default function ScreenSpotlight({ style, className = "" }) {
             quality={60}
             priority={k === 0}
             className={styles.spotImg}
+            style={{ objectPosition: cat.image.pos }}
             data-active={k === i}
           />
         ))}

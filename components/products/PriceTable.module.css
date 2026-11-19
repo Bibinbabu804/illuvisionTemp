@@ -1,0 +1,293 @@
+.wrap {
+  overflow-x: auto;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px var(--line);
+  background: var(--surface);
+}
+
+.table {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.table thead th {
+  padding: 13px 12px;
+  background: var(--ink);
+  color: var(--text-inv);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table thead th.founding {
+  background: var(--green-700);
+  color: #fff;
+}
+
+.table tbody th,
+.table tbody td {
+  padding: 13px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 0.95rem;
+}
+
+.table tbody th {
+  font-weight: 700;
+}
+
+.table tbody tr[data-tag="true"] {
+  background: var(--green-soft);
+}
+
+.regular {
+  color: var(--text-3);
+}
+
+.table td.founding {
+  color: var(--green-700);
+  font-weight: 700;
+  font-size: 1.02rem;
+}
+
+.outright {
+  font-weight: 600;
+}
+
+.tag {
+  margin-left: 8px;
+  background: var(--green);
+  color: var(--ink);
+  vertical-align: 1px;
+}
+
+/* ---------- expandable rows (like the FAQ) ---------- */
+.table[data-expandable] .row {
+  cursor: pointer;
+  transition: background-color var(--t-fast);
+}
+
+@media (hover: hover) {
+  .table[data-expandable] .row:hover {
+    background: var(--paper);
+  }
+}
+
+.table[data-expandable] .row[data-open] {
+  background: var(--green-soft);
+}
+
+.toggleCol {
+  width: 48px;
+  padding-left: 0 !important;
+}
+
+.toggle {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-inline: auto;
+  border: 0;
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--text);
+  transition:
+    transform var(--t-med) var(--ease-out),
+    background-color var(--t-fast);
+}
+
+.row[data-open] .toggle {
+  transform: rotate(45deg);
+  background: var(--green);
+}
+
+.toggle:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* the detail row has no padding or rule until it opens */
+.table tbody .detailRow td {
+  padding: 0;
+  border-top: 0;
+  text-align: left;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-med) var(--ease-out);
+}
+
+.detailRow[data-open] .panel {
+  grid-template-rows: 1fr;
+}
+
+.inner {
+  overflow: hidden;
+}
+
+.detail {
+  display: grid;
+  gap: 16px;
+  padding: 18px 20px 22px;
+  background: linear-gradient(180deg, var(--green-soft), var(--surface) 70%);
+}
+
+.detailHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.detailTitle {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.save {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--green-700);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.option {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.optionFounding {
+  box-shadow: inset 0 0 0 1.5px var(--green-500);
+}
+
+.optionName {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.optionFounding .optionName {
+  color: var(--green-700);
+}
+
+.option strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.option ul {
+  display: grid;
+  gap: 5px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option li {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.option li svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--green-700);
+}
+
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.features li {
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+}
+
+.gst {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+/* phones: all five columns fit without sideways scrolling */
+@media (max-width: 479px) {
+  .table {
+    min-width: 0;
+  }
+
+  .table thead th {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .table thead th,
+  .table tbody th,
+  .table tbody td {
+    padding: 10px 4px;
+    font-size: 0.78rem;
+  }
+
+  .table td.founding {
+    font-size: 0.82rem;
+  }
+
+  .tag {
+    display: none;
+  }
+
+  .toggleCol {
+    width: 30px;
+  }
+
+  .toggle {
+    width: 24px;
+    height: 24px;
+  }
+
+  .detail {
+    padding: 14px 12px 18px;
+  }
+
+  .options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

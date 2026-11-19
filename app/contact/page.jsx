@@ -20,6 +20,7 @@ export default function ContactPage() {
   const items = [
     contact.email && { icon: "chat", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
     contact.phone && { icon: "chat", label: "Phone", value: contact.phone, href: `tel:${contact.phone.replace(/\s/g, "")}` },
+    contact.phone2 && { icon: "chat", label: "Phone", value: contact.phone2, href: `tel:${contact.phone2.replace(/\s/g, "")}` },
     contact.address && { icon: "pin", label: "Address", value: contact.address },
     contact.hours && { icon: "info", label: "Hours", value: contact.hours },
   ].filter(Boolean);

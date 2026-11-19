@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
-import { getCategory } from "@/data/catalog";
+import { getCategory, formatINR } from "@/data/catalog";
 import { site } from "@/data/site";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./ProductCard.module.css";
 
 export function priceLabel(product) {
   if (site.features.publicPricing && product.price != null) {
-    return new Intl.NumberFormat("en", { style: "currency", currency: product.currency }).format(product.price);
+    // products with several sizes show their lowest Founding Partner price
+    return `${product.variants?.length > 1 ? "From " : ""}${formatINR(product.price)}`;
   }
   return "Request quote";
 }
@@ -48,6 +49,7 @@ export default function ProductCard({ product, section = "listing", priority = f
           sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 400px"
           quality={60}
           className={styles.img}
+          style={{ objectPosition: primary.pos }}
           loading={priority ? "eager" : "lazy"}
         />
         {secondary && (
@@ -58,10 +60,12 @@ export default function ProductCard({ product, section = "listing", priority = f
             sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 400px"
             quality={60}
             className={`${styles.img} ${styles.alt}`}
+            style={{ objectPosition: secondary.pos }}
           />
         )}
         <span className={styles.badges}>
           {product.sample && <span className="badge badge--sample">Sample listing</span>}
+          {product.badge && <span className="badge badge--green">{product.badge}</span>}
         </span>
       </Link>
 

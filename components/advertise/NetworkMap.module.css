@@ -581,9 +581,6 @@
     bottom: 12px;
   }
 
-  .nearRow :global(.btn) {
-    width: 100%;
-  }
 
   .detail {
     left: 10px;

@@ -10,6 +10,10 @@
   isolation: isolate;
 }
 
+.hidden {
+  display: none;
+}
+
 .panel {
   margin: clamp(24px, 4vw, 56px) clamp(10px, 1vw, 16px);
   padding-block: clamp(72px, 9vw, 140px);

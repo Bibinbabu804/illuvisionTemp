@@ -5,6 +5,7 @@ import Accordion from "@/components/ui/Accordion";
 import ProductGallery from "@/components/products/ProductGallery";
 import PurchasePanel from "@/components/products/PurchasePanel";
 import ProductCard from "@/components/products/ProductCard";
+import PriceTable from "@/components/products/PriceTable";
 import Icon from "@/components/ui/Icon";
 import {
   products,
@@ -13,6 +14,7 @@ import {
   specFields,
   relatedProducts,
   productInfoPending,
+  pricing,
 } from "@/data/catalog";
 import { site, faqs } from "@/data/site";
 import { pageMetadata, productSchema, JsonLd } from "@/lib/seo";
@@ -32,9 +34,9 @@ export async function generateMetadata({ params }) {
   return {
     ...pageMetadata({
       title: `${product.name} — ${category?.name}`,
-      description: `${product.summary} Request a quote from Illuvision for confirmed specifications, pricing and delivery.`,
+      description: `${product.summary} See Founding Partner and Buy Outright prices, or request a quote from Illuvision.`,
       path: `/screens/${product.slug}`,
-      image: `${product.images[0].src}?w=1200&h=630&fit=crop&auto=format`,
+      image: product.images[0].src,
     }),
     // Sample listings are placeholders and should not be indexed.
     ...(product.sample && { robots: { index: false, follow: true } }),
@@ -132,6 +134,23 @@ export default async function ProductPage({ params }) {
         </div>
       </section>
 
+      {site.features.publicPricing && product.variants?.length > 0 && (
+        <section className={styles.prices} id="prices" aria-labelledby="prices-title">
+          <div className="container">
+            <h2 id="prices-title" className={styles.h2}>Sizes and prices</h2>
+            <p className={styles.pricesLead}>{pricing.foundingNote}</p>
+            <PriceTable variants={product.variants} caption={`${product.name} prices`} productSlug={product.slug} productName={product.name} />
+            <p className="notice" style={{ marginTop: 16 }}>
+              <Icon name="info" />
+              <span>
+                <strong>{pricing.gstNote}</strong> Founding Partner prices include delivery and installation. With Buy
+                Outright, installation and transport are charged separately.
+              </span>
+            </p>
+          </div>
+        </section>
+      )}
+
       <section className="section" aria-labelledby="details-title" style={{ paddingTop: "clamp(48px,6vw,80px)" }}>
         <div className={`container ${styles.details}`}>
           <h2 id="details-title" className={styles.h2}>Product details</h2>
@@ -155,7 +174,7 @@ export default async function ProductPage({ params }) {
       <section className="section" aria-labelledby="pfaq-title">
         <div className={`container ${styles.details}`}>
           <h2 id="pfaq-title" className={styles.h2}>Frequently asked</h2>
-          <Accordion items={faqs.general.slice(1)} />
+          <Accordion items={faqs.general} />
         </div>
       </section>
     </>

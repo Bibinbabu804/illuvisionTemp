@@ -7,42 +7,41 @@ import Link from "next/link";
 import SectionHeader from "@/components/ui/SectionHeader";
 import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
-import { media } from "@/data/media";
-import { getProduct } from "@/data/catalog";
+import { getProduct, productImages } from "@/data/catalog";
 import styles from "./Showcase.module.css";
 
 const scenes = [
   {
-    id: "retail",
-    label: "Retail",
-    title: "Turn shelves into storefronts.",
-    body: "Bring promotions to eye level with standees at the entrance and screens beside the products they sell.",
-    image: media.retailScreens,
-    product: "sample-digital-standee",
+    id: "shops",
+    label: "Shops",
+    title: "Your screen promotes your shop.",
+    body: "Put fresh offers where customers look. A wall mount display saves floor space and keeps today's deals in view.",
+    image: productImages.wallMount,
+    product: "wall-mount-display",
   },
   {
-    id: "hospitality",
-    label: "Hospitality",
-    title: "Menus that update in seconds.",
-    body: "Overhead and counter screens keep menus, offers and queues moving without reprinting a thing.",
-    image: media.menuBoard,
-    product: "sample-menu-board",
+    id: "restaurants",
+    label: "Restaurants",
+    title: "Today's special, at the door.",
+    body: "An A-frame standee brings the menu to the entrance, then folds away when you close.",
+    image: productImages.aFrame,
+    product: "a-frame-standee",
   },
   {
-    id: "corporate",
-    label: "Corporate",
-    title: "Meeting rooms that keep up.",
-    body: "Wall displays and interactive panels for presentations, collaboration and reception welcome screens.",
-    image: media.meetingRoom,
-    product: "sample-interactive-panel",
+    id: "clinics",
+    label: "Clinics",
+    title: "Keep the waiting room informed.",
+    body: "A full-glass standee shows your services, timings and health messages with a premium full-height glass front.",
+    image: productImages.fullGlass,
+    product: "full-glass-standee",
   },
   {
-    id: "outdoor",
-    label: "Outdoor",
-    title: "Be seen from the street.",
-    body: "Large-format LED for façades, forecourts and entrances that need to hold attention in the open air.",
-    image: media.outdoorLedFacade,
-    product: "sample-outdoor-led-screen",
+    id: "showrooms",
+    label: "Showrooms",
+    title: "Put the launch on the floor.",
+    body: "A sleek half-glass standee, with a solid lower panel, holds its own beside the products it promotes.",
+    image: productImages.halfGlass,
+    product: "half-glass-standee",
   },
 ];
 
@@ -97,14 +96,19 @@ export default function Showcase({ index }) {
                 data-active={i === active}
                 aria-hidden={i !== active}
               >
-                <Image
-                  src={s.image.src}
-                  alt={s.image.alt}
-                  fill
-                  quality={75}
-                  sizes="(max-width: 1023px) 100vw, 1320px"
-                  className={styles.img}
-                />
+                {/* soft backdrop from the same photo, then the portrait photo itself */}
+                <Image src={s.image.src} alt="" fill quality={40} sizes="320px" className={styles.backdrop} />
+                <div className={styles.photo}>
+                  <Image
+                    src={s.image.src}
+                    alt={s.image.alt}
+                    fill
+                    quality={75}
+                    sizes="(max-width: 767px) 100vw, 480px"
+                    className={styles.img}
+                    style={{ objectPosition: s.image.pos }}
+                  />
+                </div>
               </div>
             ))}
             <span className={styles.shade} aria-hidden="true" />

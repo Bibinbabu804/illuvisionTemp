@@ -80,6 +80,12 @@ export default function ScreenStory() {
             {FROM.map(([x, y, r], i) => (
               <span key={i} className={styles.tile} style={{ "--x": `${x}%`, "--y": `${y}%`, "--r": `${r}deg`, "--i": i }} />
             ))}
+            {/* steps 3–4: the brand plays across the whole wall, seams and all */}
+            <span className={styles.brand}>
+              ILLU<span>V</span>ISION
+            </span>
+            {/* LED pixel grid over the whole wall, wordmark included */}
+            <span className={styles.ledGrid} />
             <div className={styles.on}>
               <LazyVideo src={videos.heroCity.src} poster={videos.heroCity.poster} className={styles.cover} />
             </div>

@@ -75,6 +75,25 @@
   object-fit: cover;
 }
 
+/* The product photos are portrait: a blurred copy fills the stage and the
+   photo itself stands on the right, uncropped. */
+.backdrop {
+  object-fit: cover;
+  filter: blur(36px) brightness(0.55) saturate(1.1);
+  transform: scale(1.25);
+}
+
+.photo {
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  right: clamp(28px, 6%, 96px);
+  aspect-ratio: 5 / 9;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+}
+
 .shade {
   position: absolute;
   inset: 0;
@@ -210,5 +229,13 @@
 
   .shade {
     background: linear-gradient(0deg, rgba(11, 13, 14, 0.92) 0%, rgba(11, 13, 14, 0.35) 60%, rgba(11, 13, 14, 0.15) 100%);
+  }
+
+  /* phones: the stage is portrait, so the photo simply fills it */
+  .photo {
+    inset: 0;
+    aspect-ratio: auto;
+    border-radius: 0;
+    box-shadow: none;
   }
 }

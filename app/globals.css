@@ -234,6 +234,11 @@ button {
   padding-block: var(--section);
 }
 
+/* first section on a page without a hero: clear the fixed header */
+.section--lead {
+  padding-top: calc(var(--header-h) + clamp(40px, 5vw, 72px));
+}
+
 .section--dark {
   background: var(--ink);
   color: var(--text-inv);
@@ -461,6 +466,24 @@ button {
   --btn-icon-fg: var(--ink);
 }
 
+/* High-contrast call to action: solid brand green, ink label and icon tile */
+.btn--accent {
+  --btn-bg: var(--green);
+  --btn-fg: var(--ink);
+  --btn-icon-bg: var(--ink);
+  --btn-icon-fg: var(--green);
+  box-shadow: 0 10px 24px -12px rgba(19, 122, 43, 0.75);
+}
+
+.btn--accent:hover {
+  --btn-bg: var(--green-500);
+  box-shadow: 0 14px 30px -12px rgba(19, 122, 43, 0.9);
+}
+
+.btn--accent:focus-visible {
+  outline-color: var(--ink);
+}
+
 .btn--outline-inv {
   --btn-bg: rgba(255, 255, 255, 0.04);
   --btn-fg: var(--text-inv);
@@ -473,6 +496,16 @@ button {
 
 .btn--block {
   width: 100%;
+}
+
+/* phones: buttons keep their natural width, never full width */
+@media (max-width: 767px) {
+  .btn--block {
+    width: auto;
+    /* don't let a grid or flex parent stretch it either */
+    justify-self: start;
+    align-self: flex-start;
+  }
 }
 
 .btn--sm {

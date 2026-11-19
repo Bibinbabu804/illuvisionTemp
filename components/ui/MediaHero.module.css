@@ -117,8 +117,4 @@
   }
 }
 
-@media (max-width: 479px) {
-  .ctas > * {
-    width: 100%;
-  }
-}
+

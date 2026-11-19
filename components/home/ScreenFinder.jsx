@@ -14,43 +14,39 @@ import styles from "./ScreenFinder.module.css";
 const questions = [
   {
     id: "where",
-    q: "Where will the screen live?",
+    q: "Where will the screen go?",
     options: [
-      { id: "indoor", label: "Indoors", hint: "Receptions, stores, offices", icon: "layers" },
-      { id: "window", label: "Shop window", hint: "Facing the street through glass", icon: "sun" },
-      { id: "outdoor", label: "Outdoors", hint: "Façades, forecourts, roadside", icon: "map" },
+      { id: "wall", label: "On a wall", hint: "Behind the counter or above a display", icon: "layers" },
+      { id: "entrance", label: "At the entrance", hint: "By the door, facing people walking in", icon: "pin" },
+      { id: "floor", label: "On the shop floor", hint: "Freestanding, beside what it promotes", icon: "screen" },
     ],
   },
   {
-    id: "goal",
-    q: "What should it do?",
+    id: "move",
+    q: "Will you move it during the day?",
     options: [
-      { id: "promote", label: "Promote", hint: "Offers, ads and launches", icon: "spark" },
-      { id: "inform", label: "Inform", hint: "Menus, prices, wayfinding", icon: "list" },
-      { id: "collab", label: "Collaborate", hint: "Meetings, touch, training", icon: "hand" },
-      { id: "wow", label: "Make a statement", hint: "Big, immersive visuals", icon: "bolt" },
+      { id: "yes", label: "Yes, it folds away", hint: "Put out in the morning, in at closing", icon: "rotate" },
+      { id: "no", label: "No, it stays put", hint: "A fixed spot in the space", icon: "pin" },
     ],
   },
   {
     id: "size",
-    q: "How big is the space?",
+    q: "How big should it be?",
     options: [
-      { id: "compact", label: "Compact", hint: "Counter, aisle or entrance", icon: "screen" },
-      { id: "standard", label: "Standard", hint: "A typical wall or room", icon: "ruler" },
-      { id: "large", label: "Large", hint: "Atrium, hall or façade", icon: "grid" },
+      { id: "compact", label: "Compact", hint: "32 inch", icon: "screen" },
+      { id: "standard", label: "Standard", hint: "43 inch", icon: "ruler" },
+      { id: "large", label: "Large", hint: "50 or 55 inch", icon: "grid" },
     ],
   },
 ];
 
-/** Simple, transparent rules: no data claims, just format guidance. */
-function recommend({ where, goal, size }) {
-  if (where === "outdoor") return { main: "outdoor-led", alt: "digital-standees", why: "Outdoor viewing needs weather-rated, very bright LED." };
-  if (goal === "collab") return { main: "interactive-panels", alt: "indoor-displays", why: "Touch-ready panels are built for meetings and self-service." };
-  if (goal === "inform" && where === "indoor") return { main: "menu-boards", alt: "indoor-displays", why: "Counter and overhead boards keep menus and prices easy to update." };
-  if (goal === "wow" || size === "large") return { main: "led-video-walls", alt: "indoor-displays", why: "Modular LED scales to any size for a seamless statement wall." };
-  if (goal === "promote" && size === "compact") return { main: "digital-standees", alt: "indoor-displays", why: "A freestanding portrait screen catches people at eye level." };
-  if (where === "window") return { main: "indoor-displays", alt: "digital-standees", why: "Ask about high-brightness models so content stays clear through glass." };
-  return { main: "indoor-displays", alt: "digital-standees", why: "A wall-mounted commercial display suits most indoor spaces." };
+/** Simple, transparent rules based on the formats and sizes in the brochure. */
+function recommend({ where, move, size }) {
+  if (where === "wall") return { main: "wall-mount", alt: "half-glass-standee", why: "A wall mount display saves floor space, and comes in 32, 43 and 55 inch." };
+  if (move === "yes" && size !== "large") return { main: "a-frame-standee", alt: "half-glass-standee", why: "The A-frame standee folds away, which makes it perfect for entrances." };
+  if (move === "yes") return { main: "half-glass-standee", alt: "a-frame-standee", why: "The A-frame comes in 32 and 43 inch. For 50 or 55 inch, a half-glass standee is the closest fit." };
+  if (where === "entrance") return { main: "full-glass-standee", alt: "half-glass-standee", why: "A premium full-height glass front makes a strong first impression at the door." };
+  return { main: "half-glass-standee", alt: "full-glass-standee", why: "A sleek standee with a solid lower panel sits well on a busy shop floor." };
 }
 
 const ease = [0.16, 1, 0.3, 1];
@@ -160,7 +156,7 @@ export default function ScreenFinder({ index }) {
                     animate={{ clipPath: "inset(0 0% 0 0 round 20px)" }}
                     transition={{ duration: 1, ease }}
                   >
-                    <Image src={main.image.src} alt={main.image.alt} fill sizes="(max-width: 767px) 90vw, 40vw" quality={70} className={styles.cover} />
+                    <Image src={main.image.src} alt={main.image.alt} fill sizes="(max-width: 767px) 90vw, 40vw" quality={70} className={styles.cover} style={{ objectPosition: main.image.pos }} />
                   </motion.div>
                   <div className={styles.resultCopy}>
                     <p className={styles.count}>Our suggestion</p>

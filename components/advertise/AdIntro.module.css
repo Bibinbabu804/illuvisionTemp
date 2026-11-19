@@ -72,13 +72,4 @@
   gap: 12px;
 }
 
-@media (max-width: 479px) {
-  .ctas,
-  .ctas > * {
-    width: 100%;
-  }
 
-  .ctas :global(.btn) {
-    width: 100%;
-  }
-}

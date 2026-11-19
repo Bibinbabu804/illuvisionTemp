@@ -32,6 +32,7 @@ export default function Footer() {
   const contactItems = [
     contact.email && { label: contact.email, href: `mailto:${contact.email}` },
     contact.phone && { label: contact.phone, href: `tel:${contact.phone.replace(/\s/g, "")}` },
+    contact.phone2 && { label: contact.phone2, href: `tel:${contact.phone2.replace(/\s/g, "")}` },
   ].filter(Boolean);
 
   return (
@@ -97,7 +98,7 @@ export default function Footer() {
                 <li><FLink href="/advertise">Advertise with us</FLink></li>
                 <li><FLink href="/advertise#network">Screen network map</FLink></li>
                 <li><FLink href="/advertise#planner">Campaign planner</FLink></li>
-                <li><FLink href="/advertise#how-it-works">How it works</FLink></li>
+                <li><FLink href="/#how-it-works">How it works</FLink></li>
               </ul>
             </nav>
 

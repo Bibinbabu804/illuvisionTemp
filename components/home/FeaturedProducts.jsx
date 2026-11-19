@@ -66,8 +66,8 @@ export default function FeaturedProducts({ index }) {
             index={index}
             label="Featured screens"
             id="featured-title"
-            lines={["Popular picks,", "ready to quote."]}
-            lead="Open any screen to see its details and request a confirmed quote."
+            lines={["Four formats,", "ready to quote."]}
+            lead="Open any screen to see its sizes, display options and Founding Partner prices."
             aside={
               <Button href="/screens" variant="ghost" event={EVENTS.SHOP_CTA} eventProps={{ section: "featured" }}>
                 View all screens

@@ -33,7 +33,7 @@ export function formatBudget(budget, currency) {
  * null) it prepares an enquiry brief and never estimates reach, spend
  * allocation or availability.
  */
-export default function Planner({ inPage = false, index }) {
+export default function Planner({ inPage = false, index, headingAs = "h2", lead = false }) {
   const router = useRouter();
   const id = useId();
   const [state, setState] = useState(initial);
@@ -86,12 +86,13 @@ export default function Planner({ inPage = false, index }) {
   };
 
   return (
-    <section className={`section ${styles.section}`} id="planner" aria-labelledby={`${id}-title`}>
+    <section className={`section ${lead ? "section--lead" : ""} ${styles.section}`} id="planner" aria-labelledby={`${id}-title`}>
       <div className="container">
         <SectionHeader
           index={index}
           label="Campaign planner"
           id={`${id}-title`}
+          as={headingAs}
           lines={["Start with", "your budget."]}
           lead="Set your budget and preferences. We use your brief to find suitable screens and come back with confirmed options and pricing."
         />

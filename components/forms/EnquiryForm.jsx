@@ -82,12 +82,12 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
   }, [variant]);
 
   useEffect(() => {
-    if (defaults.quantity != null || defaults.deliveryLocation != null) {
+    if (defaults.quantity != null || defaults.deliveryLocation != null || defaults.message != null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with product page selectors
       setValues((v) => ({ ...v, ...defaults }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaults.quantity, defaults.deliveryLocation]);
+  }, [defaults.quantity, defaults.deliveryLocation, defaults.message]);
 
   const set = (field) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -250,7 +250,7 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
       )}
 
       <div className={styles.actions}>
-        <button type="submit" className="btn" disabled={status === "sending"} aria-busy={status === "sending"}>
+        <button type="submit" className="btn btn--accent" disabled={status === "sending"} aria-busy={status === "sending"}>
           {status === "sending" ? (
             <BtnIcon>
               <span className={styles.spinner} />

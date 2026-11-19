@@ -77,13 +77,14 @@ export default function ProductGallery({ images, name, sample }) {
             >
               <Image
                 src={img.src}
-                alt={i === 0 ? `${name} — illustrative image` : img.alt}
+                alt={img.alt || name}
                 fill
                 quality={75}
                 sizes="(max-width: 1023px) 100vw, 58vw"
                 preload={i === 0}
                 loading={i === 0 ? undefined : "lazy"}
                 className={styles.img}
+                style={{ objectFit: "contain" }}
               />
             </div>
           ))}
@@ -124,7 +125,7 @@ export default function ProductGallery({ images, name, sample }) {
               aria-label={`Show image ${i + 1}`}
               onClick={() => goTo(i)}
             >
-              <Image src={img.src} alt="" fill sizes="120px" quality={60} className={styles.img} />
+              <Image src={img.src} alt="" fill sizes="120px" quality={60} className={styles.img} style={{ objectPosition: img.pos }} />
             </button>
           ))}
         </div>

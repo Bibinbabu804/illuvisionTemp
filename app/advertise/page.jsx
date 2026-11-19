@@ -1,15 +1,11 @@
-import Button from "@/components/ui/Button";
-import MediaHero from "@/components/ui/MediaHero";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import NetworkSection from "@/components/advertise/NetworkSection";
 import Placements from "@/components/advertise/Placements";
 import Planner from "@/components/advertise/Planner";
-import AdStory from "@/components/advertise/AdStory";
 import MarqueeRibbons from "@/components/home/MarqueeRibbons";
 import EnquirySection from "@/components/advertise/EnquirySection";
 import FaqSection from "@/components/home/FaqSection";
-import { videos } from "@/data/media";
 import { faqs } from "@/data/site";
-import { EVENTS } from "@/lib/analytics";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -22,31 +18,14 @@ export const metadata = pageMetadata({
 export default function AdvertisePage() {
   return (
     <>
-      <MediaHero
-        video={videos.streetKiosk}
-        crumbs={[{ label: "Home", href: "/" }, { label: "Advertise", href: "/advertise" }]}
-        lines={["Your message, on screens", <>that get <em>noticed.</em></>]}
-        lead={
-          <>
-            Tell us your budget and goals. We match your campaign to suitable screens on
-            Illuvision&rsquo;s associated network and confirm everything before it goes live.
-          </>
-        }
-      >
-        <Button href="#planner" variant="light" event={EVENTS.AD_CTA} eventProps={{ section: "advertise-hero", cta: "plan" }}>
-          Plan my campaign
-        </Button>
-        <Button href="#network" variant="outline-inv" event={EVENTS.AD_CTA} eventProps={{ section: "advertise-hero", cta: "map" }}>
-          Browse the network
-        </Button>
-      </MediaHero>
-      <Placements index={1} />
+      {/* No hero banner: the budget planner leads, then the map. */}
+      <Breadcrumbs visible={false} items={[{ label: "Home", href: "/" }, { label: "Advertise", href: "/advertise" }]} />
+      <Planner inPage lead headingAs="h1" index={1} />
       <NetworkSection enquiryHref="#enquiry" index={2} />
-      <AdStory index={3} />
-      <Planner inPage index={4} />
-      <MarqueeRibbons panel items={["Your brand", "On screen", "Your budget", "Your plan", "Seen across the city"]} />
-      <EnquirySection index={5} />
-      <FaqSection index={6} items={faqs.advertising} title={["Advertising", "questions."]} />
+      <Placements index={3} />
+      <EnquirySection index={4} />
+      <MarqueeRibbons panel hidden items={["Your brand", "On screen", "Your budget", "Your plan", "Seen across the city"]} />
+      <FaqSection index={5} items={faqs.advertising} title={["Advertising", "questions."]} />
     </>
   );
 }

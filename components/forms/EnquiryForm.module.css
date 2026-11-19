@@ -125,8 +125,4 @@
   .grid {
     grid-template-columns: 1fr;
   }
-
-  .actions :global(.btn) {
-    width: 100%;
-  }
 }

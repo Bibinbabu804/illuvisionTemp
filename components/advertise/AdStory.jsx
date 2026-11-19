@@ -47,8 +47,8 @@ const places = [
 const slots = ["06", "09", "12", "15", "18", "21", "24"];
 
 /**
- * /advertise scroll story: one billboard screen follows a campaign from
- * brief → places → schedule → on air → a wall of screens.
+ * Landing-page advertising story: one billboard screen follows a campaign
+ * from brief → places → schedule → on air → a wall of screens.
  */
 export default function AdStory() {
   return (

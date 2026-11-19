@@ -5,6 +5,8 @@ import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
 import EnquiryForm from "@/components/forms/EnquiryForm";
 import { priceLabel } from "./ProductCard";
+import { SELECT_VARIANT_EVENT } from "./PriceTable";
+import { formatINR } from "@/data/catalog";
 import { site } from "@/data/site";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./PurchasePanel.module.css";
@@ -15,6 +17,27 @@ export default function PurchasePanel({ product, categoryName }) {
   const dialogRef = useRef(null);
   const panelRef = useRef(null);
   const [showSticky, setShowSticky] = useState(false);
+
+  // Size + display chosen in a price table (?size=43&display=Panasonic) or
+  // in the picker below. -1 = nothing chosen yet.
+  const variants = product.variants || [];
+  const [variantIndex, setVariantIndex] = useState(-1);
+  const findVariant = (size, display) =>
+    variants.findIndex((v) => v.size === Number(size) && v.display.toLowerCase() === String(display).toLowerCase());
+  useEffect(() => {
+    const fromUrl = () => {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("size") && q.get("display")) setVariantIndex(findVariant(q.get("size"), q.get("display")));
+    };
+    const fromEvent = (e) => setVariantIndex(findVariant(e.detail.size, e.detail.display));
+    fromUrl();
+    window.addEventListener(SELECT_VARIANT_EVENT, fromEvent);
+    return () => window.removeEventListener(SELECT_VARIANT_EVENT, fromEvent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.slug]);
+  const variant = variants[variantIndex];
+  const variantLabel = variant ? `${variant.size}″ ${variant.display}` : null;
+  const shownPrice = variant ? formatINR(variant.founding) : priceLabel(product);
 
   useEffect(() => {
     track(EVENTS.PRODUCT_VIEW, { sku: product.sku, sample: product.sample });
@@ -66,15 +89,46 @@ export default function PurchasePanel({ product, categoryName }) {
 
       <div className={styles.priceRow}>
         <div>
-          <span className={styles.priceLabel}>Price</span>
-          <span className={styles.price}>{priceLabel(product)}</span>
+          <span className={styles.priceLabel}>
+            {variant
+              ? `${variantLabel} · Founding Partner price, before 18% GST`
+              : site.features.publicPricing && product.price != null
+                ? "Founding Partner price, before 18% GST"
+                : "Price"}
+          </span>
+          <span className={styles.price}>{shownPrice}</span>
+          {variant && <span className={styles.outrightNote}>Buy Outright {formatINR(variant.outright)}</span>}
         </div>
         {product.stock ? (
           <span className="badge badge--green">{product.stock}</span>
         ) : (
-          <span className={styles.stockNote}>Availability confirmed with your quote</span>
+          <a href="#prices" className={styles.stockNote}>See all sizes and prices</a>
         )}
       </div>
+
+      {site.features.publicPricing && variants.length > 0 && (
+        <div className={`field ${styles.variantField}`}>
+          <label htmlFor="variant">Size and display</label>
+          <select
+            id="variant"
+            className="input"
+            value={variantIndex}
+            onChange={(e) => {
+              const i = Number(e.target.value);
+              setVariantIndex(i);
+              const v = variants[i];
+              if (v) window.history.replaceState(null, "", `?size=${v.size}&display=${encodeURIComponent(v.display)}`);
+            }}
+          >
+            <option value={-1}>Choose a size and display</option>
+            {variants.map((v, i) => (
+              <option key={`${v.size}-${v.display}`} value={i}>
+                {v.size}″ {v.display} · {formatINR(v.founding)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className={styles.controls}>
         <div className="field">
@@ -108,8 +162,8 @@ export default function PurchasePanel({ product, categoryName }) {
             <input
               id="market"
               className="input"
-              placeholder="City, country"
-              autoComplete="country-name"
+              placeholder="Town or city"
+              autoComplete="address-level2"
               value={market}
               onChange={(e) => setMarket(e.target.value)}
             />
@@ -123,15 +177,15 @@ export default function PurchasePanel({ product, categoryName }) {
       </button>
 
       <ul className={styles.assure}>
-        <li><Icon name="check" size={16} /> Confirmed specs, price and delivery in your quote</li>
+        <li><Icon name="check" size={16} /> Size, display and price confirmed in your quote</li>
         <li><Icon name="check" size={16} /> No obligation to buy</li>
       </ul>
 
       {/* Mobile sticky CTA */}
       <div className={styles.sticky} data-show={showSticky} aria-hidden={!showSticky} inert={!showSticky}>
         <div>
-          <strong>{product.name}</strong>
-          <span>{priceLabel(product)}</span>
+          <strong>{variant ? `${variantLabel} ${product.name}` : product.name}</strong>
+          <span>{shownPrice}</span>
         </div>
         <button type="button" className="btn btn--plain" onClick={() => openQuote("sticky-cta")}>
           Request quote
@@ -149,7 +203,7 @@ export default function PurchasePanel({ product, categoryName }) {
           <div className={styles.dialogHead}>
             <div>
               <p className="eyebrow">Request a quote</p>
-              <h2 id="quote-title">{product.name}</h2>
+              <h2 id="quote-title">{variant ? `${variantLabel} ${product.name}` : product.name}</h2>
               <p className="muted">{product.sku}</p>
             </div>
             <button type="button" className={styles.close} onClick={() => dialogRef.current.close()} aria-label="Close">
@@ -159,7 +213,13 @@ export default function PurchasePanel({ product, categoryName }) {
           <EnquiryForm
             variant="product"
             product={product}
-            defaults={{ quantity: qty, deliveryLocation: market }}
+            defaults={{
+              quantity: qty,
+              deliveryLocation: market,
+              ...(variant && {
+                message: `I'm interested in the ${variantLabel} ${product.name} (Founding Partner ${formatINR(variant.founding)} / Buy Outright ${formatINR(variant.outright)}, before GST).`,
+              }),
+            }}
           />
         </div>
       </dialog>

@@ -1,0 +1,8 @@
+/* sits directly above the full-bleed advertising video */
+.section {
+  padding-bottom: clamp(28px, 4vw, 48px);
+}
+
+.head {
+  margin-bottom: 0;
+}

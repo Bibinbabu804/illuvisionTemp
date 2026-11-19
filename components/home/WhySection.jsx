@@ -17,7 +17,7 @@ const pillars = [
   {
     icon: "layers",
     title: "One partner, every format",
-    body: "Indoor displays, LED walls, outdoor LED and standees from a single supplier, so your screens work together.",
+    body: "Wall mount displays and A-frame, half-glass and full-glass standees from a single supplier, in sizes from 32 to 55 inch.",
     image: media.indoorVideoWall,
   },
   {

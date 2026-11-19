@@ -15,6 +15,14 @@ export default function ProductBrowser() {
   const pathname = usePathname();
   const active = params.get("category") || "all";
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("recommended");
+  const [size, setSize] = useState("any");
+
+  // every size offered across the range, e.g. [32, 43, 50, 55]
+  const allSizes = useMemo(
+    () => [...new Set(products.flatMap((p) => (p.variants || []).map((v) => v.size)))].sort((a, b) => a - b),
+    []
+  );
 
   const setCategory = (slug) => {
     const next = new URLSearchParams(params);
@@ -27,12 +35,33 @@ export default function ProductBrowser() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter(
-      (p) =>
-        (active === "all" || p.category === active) &&
-        (!q || `${p.name} ${p.sku} ${p.summary} ${p.useCases.join(" ")}`.toLowerCase().includes(q))
-    );
-  }, [active, query]);
+    const list = products
+      .filter(
+        (p) =>
+          (active === "all" || p.category === active) &&
+          (!q || `${p.name} ${p.sku} ${p.summary} ${p.useCases.join(" ")}`.toLowerCase().includes(q))
+      )
+      // a size filter keeps products offered in that size, priced for it
+      .map((p) => {
+        if (size === "any" || !p.variants) return p;
+        const variants = p.variants.filter((v) => v.size === Number(size));
+        if (!variants.length) return null;
+        return { ...p, variants, price: Math.min(...variants.map((v) => v.founding)) };
+      })
+      .filter(Boolean);
+    if (sort === "price-asc") return [...list].sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+    if (sort === "price-desc") return [...list].sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
+    return list;
+  }, [active, query, sort, size]);
+
+  const onSort = (value) => {
+    setSort(value);
+    track(EVENTS.SHOP_CTA, { section: "listing-sort", sort: value });
+  };
+  const onSize = (value) => {
+    setSize(value);
+    track(EVENTS.SHOP_CTA, { section: "listing-size", size: value });
+  };
 
   const counts = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.slug, products.filter((p) => p.category === c.slug).length])),
@@ -73,9 +102,31 @@ export default function ProductBrowser() {
         </label>
       </div>
 
-      <p className={styles.count} aria-live="polite">
-        Showing {results.length} of {products.length} screens
-      </p>
+      <div className={styles.filters}>
+        <p className={styles.count} aria-live="polite">
+          Showing {results.length} of {products.length} screens
+          {size !== "any" && ` in ${size}″`}
+        </p>
+        <div className={styles.selects}>
+          <label className={styles.select}>
+            <span>Size</span>
+            <select className="input" value={size} onChange={(e) => onSize(e.target.value)}>
+              <option value="any">All sizes</option>
+              {allSizes.map((s) => (
+                <option key={s} value={s}>{s} inch</option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.select}>
+            <span>Sort by</span>
+            <select className="input" value={sort} onChange={(e) => onSort(e.target.value)}>
+              <option value="recommended">Recommended</option>
+              <option value="price-asc">Price: low to high</option>
+              <option value="price-desc">Price: high to low</option>
+            </select>
+          </label>
+        </div>
+      </div>
 
       {results.length ? (
         <LayoutGroup>
@@ -101,7 +152,7 @@ export default function ProductBrowser() {
       ) : (
         <div className={styles.empty}>
           <p>No screens match your search.</p>
-          <button type="button" className="text-link" onClick={() => { setQuery(""); setCategory("all"); }}>
+          <button type="button" className="text-link" onClick={() => { setQuery(""); setSize("any"); setCategory("all"); }}>
             Clear filters
           </button>
         </div>

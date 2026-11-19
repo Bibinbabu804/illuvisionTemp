@@ -3,8 +3,10 @@
   padding-block: var(--section);
 }
 
+/* pinned: no top padding (the sticky frame handles it), but keep a gap
+   before the next section once the row un-pins */
 .section[data-pinned="true"] {
-  padding-block: 0;
+  padding-block: 0 var(--section);
 }
 
 .section[data-pinned="true"] .sticky {
@@ -17,6 +19,8 @@
   height: 100vh;
   overflow: hidden;
   padding-top: calc(var(--header-h) + 8px);
+  /* breathing room under the cards and progress bar */
+  padding-bottom: clamp(24px, 4vh, 48px);
 }
 
 .section[data-pinned="true"] .head {

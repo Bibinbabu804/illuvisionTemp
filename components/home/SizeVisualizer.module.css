@@ -12,14 +12,17 @@
   box-shadow: inset 0 0 0 1px var(--line), 0 40px 80px -50px rgba(11, 13, 14, 0.3);
 }
 
-/* ---------- scene ---------- */
+/* ---------- scene ----------
+   Container-query units make 1cm a fixed share of the scene height, so the
+   person and every screen stay to scale at any size. */
 .scene {
+  --cm: calc(100cqh / 300);
   position: relative;
-  height: clamp(380px, 56vh, 560px);
+  height: clamp(380px, 60vh, 600px);
+  container-type: size;
   border-radius: calc(var(--r-xl) - 10px);
   overflow: hidden;
-  background:
-    linear-gradient(180deg, #efeee9 0%, #e6e4dc 82%, #d9d6cc 82%, #cfccc2 100%);
+  background: linear-gradient(180deg, #efeee9 0%, #e6e4dc 88%, #d9d6cc 88%, #cfccc2 100%);
 }
 
 .floor {
@@ -38,30 +41,65 @@
   background: repeating-linear-gradient(90deg, rgba(11, 13, 14, 0.12) 0 6px, transparent 6px 12px);
 }
 
-/* The scene's floor is the bottom edge: heights are % of 3 m. */
-.screen {
+/* person: fixed at the left end */
+.person {
   position: absolute;
-  left: 38%;
-  translate: -50% 0;
-  border: 6px solid #0b0d0e;
-  border-radius: 8px;
+  left: 6%;
+  bottom: 0;
+  fill: #2a2f33;
+}
+
+.personLabel {
+  position: absolute;
+  left: 6%;
+  translate: calc(var(--cm) * 8 - 50%) 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* ---------- the unit: left edge fixed, grows to the right ---------- */
+.unit {
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: absolute;
+  left: calc(6% + var(--cm) * 90);
+  display: flex;
+  flex-direction: column;
+  transition:
+    width 600ms var(--ease),
+    height 600ms var(--ease),
+    bottom 600ms var(--ease);
+}
+
+.screenBox {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: var(--bezel);
+  border-radius: calc(var(--cm) * 2.5);
   background: #0b0d0e;
-  box-shadow: 0 30px 50px -20px rgba(11, 13, 14, 0.5);
-  max-width: 70%;
+  box-shadow: 0 30px 50px -24px rgba(11, 13, 14, 0.5);
+  transition: height 600ms var(--ease), padding 600ms var(--ease);
 }
 
 .content {
-  position: absolute;
-  inset: 0;
-  border-radius: 3px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--cm) * 0.8);
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .screenLabel {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: calc(var(--bezel) + 6px);
+  left: calc(var(--bezel) + 6px);
   padding: 3px 8px;
   border-radius: 6px;
   background: rgba(11, 13, 14, 0.75);
@@ -70,30 +108,75 @@
   font-weight: 700;
 }
 
-.person {
-  position: absolute;
-  right: 12%;
-  bottom: 0;
-  fill: #2a2f33;
+/* half-glass: solid lower panel + plinth */
+.panel {
+  flex: none;
+  margin: 0 calc(var(--cm) * 0.5);
+  background: linear-gradient(90deg, #15181a, #24292c 50%, #15181a);
+  transition: height 600ms var(--ease);
 }
 
-.personLabel {
+/* full-glass: the glass front continues below the screen */
+.glass {
+  flex: none;
+  border-radius: 0 0 calc(var(--cm) * 1.5) calc(var(--cm) * 1.5);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.18) 0 18%, transparent 18% 40%, rgba(255, 255, 255, 0.08) 40% 46%, transparent 46%),
+    linear-gradient(180deg, #1b2024, #0b0d0e);
+  box-shadow: inset 0 0 0 calc(var(--cm) * 0.8) #0b0d0e;
+  transition: height 600ms var(--ease);
+}
+
+.unit[data-format="full-glass"] .screenBox {
+  border-radius: calc(var(--cm) * 1.5) calc(var(--cm) * 1.5) 0 0;
+}
+
+.base {
+  flex: none;
+  margin: 0 calc(var(--cm) * -6);
+  border-radius: calc(var(--cm) * 1);
+  background: #1a1d20;
+  transition: height 600ms var(--ease);
+}
+
+.unit[data-format="full-glass"] .base {
+  background: linear-gradient(180deg, #c9cdd0, #8f959a);
+}
+
+/* A-frame: screen sits in a frame on two legs, rear legs splay back */
+.unit[data-format="a-frame"] {
+  justify-content: flex-start;
+}
+
+.legs {
   position: absolute;
-  right: calc(12% - 54px);
-  bottom: calc(172 / 300 * 100%);
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--surface);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-2);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  border-left: calc(var(--cm) * 2.4) solid #0b0d0e;
+  border-right: calc(var(--cm) * 2.4) solid #0b0d0e;
+  transition: height 600ms var(--ease);
+}
+
+.legs::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(100% + var(--cm) * 14);
+  height: 100%;
+  translate: -50% 0;
+  border-left: calc(var(--cm) * 1.6) solid #3a3f43;
+  border-right: calc(var(--cm) * 1.6) solid #3a3f43;
+  z-index: -1;
 }
 
 /* ---------- controls ---------- */
 .controls {
   display: grid;
   align-content: start;
-  gap: 18px;
+  gap: 16px;
   justify-items: start;
   padding: clamp(18px, 2.5vw, 32px);
 }
@@ -133,6 +216,12 @@
 .sliderLabel {
   font-size: var(--fs-sm);
   font-weight: 600;
+}
+
+.formatNote {
+  margin-top: -6px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
 }
 
 .range {
@@ -179,7 +268,18 @@
 .note {
   font-size: var(--fs-xs);
   color: var(--text-3);
-  max-width: 44ch;
+  max-width: 46ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unit,
+  .screenBox,
+  .panel,
+  .glass,
+  .base,
+  .legs {
+    transition: none;
+  }
 }
 
 @media (max-width: 1023px) {
@@ -188,25 +288,24 @@
   }
 
   .scene {
-    height: 360px;
+    height: 420px;
   }
 }
 
 @media (max-width: 479px) {
   .scene {
-    height: 300px;
-  }
-
-  .screen {
-    left: 40%;
-    border-width: 4px;
+    height: 340px;
   }
 
   .person {
-    right: 8%;
+    left: 4%;
   }
 
   .personLabel {
-    right: 2%;
+    left: 4%;
+  }
+
+  .unit {
+    left: calc(4% + var(--cm) * 72);
   }
 }

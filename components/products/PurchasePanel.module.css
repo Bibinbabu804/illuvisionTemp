@@ -277,3 +277,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* chosen size + display (from a price table or the picker) */
+.outrightNote {
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.variantField {
+  margin-top: 4px;
+}
