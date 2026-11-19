@@ -56,6 +56,7 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
     name: "", company: "", email: "", phone: "", location: "", message: "",
     budget: "", currency: "USD", duration: "1m", preferences: "",
     quantity: 1, deliveryLocation: "", topic: TOPICS[0], source: "", consent: false,
+    screen_display_variant_id: null, pricing_tier: "founding",
     ...defaults,
   }));
   const [errors, setErrors] = useState({});
@@ -82,12 +83,26 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
   }, [variant]);
 
   useEffect(() => {
-    if (defaults.quantity != null || defaults.deliveryLocation != null || defaults.message != null) {
+    if (
+      defaults.quantity != null ||
+      defaults.deliveryLocation != null ||
+      defaults.message != null ||
+      defaults.screen_display_variant_id != null ||
+      defaults.screenDisplayVariantId != null ||
+      defaults.pricing_tier != null
+    ) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with product page selectors
       setValues((v) => ({ ...v, ...defaults }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaults.quantity, defaults.deliveryLocation, defaults.message]);
+  }, [
+    defaults.quantity,
+    defaults.deliveryLocation,
+    defaults.message,
+    defaults.screen_display_variant_id,
+    defaults.screenDisplayVariantId,
+    defaults.pricing_tier,
+  ]);
 
   const set = (field) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;

@@ -50,7 +50,9 @@ export const site = {
    * Where enquiry forms are sent. If unset, forms run in preview mode:
    * they validate and confirm on screen but nothing is transmitted.
    */
-  enquiryEndpoint: process.env.NEXT_PUBLIC_ENQUIRY_ENDPOINT || null,
+  enquiryEndpoint:
+    process.env.NEXT_PUBLIC_ENQUIRY_ENDPOINT ||
+    (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/product-enquiries` : null),
 };
 
 export const nav = [

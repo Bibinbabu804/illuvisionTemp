@@ -18,6 +18,7 @@ import {
 } from "@/data/catalog";
 import { site, faqs } from "@/data/site";
 import { pageMetadata, productSchema, JsonLd } from "@/lib/seo";
+import { getPublicProductWithVariants } from "@/lib/publicScreens";
 import styles from "./page.module.css";
 
 export function generateStaticParams() {
@@ -47,7 +48,7 @@ const PENDING = "Awaiting confirmed spec sheet";
 
 export default async function ProductPage({ params }) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = (await getPublicProductWithVariants(slug)) || getProduct(slug);
   if (!product) notFound();
   const category = getCategory(product.category);
   const related = relatedProducts(product);

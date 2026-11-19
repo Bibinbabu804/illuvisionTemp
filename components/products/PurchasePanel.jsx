@@ -216,6 +216,8 @@ export default function PurchasePanel({ product, categoryName }) {
             defaults={{
               quantity: qty,
               deliveryLocation: market,
+              screen_display_variant_id: variant?.id || null,
+              pricing_tier: "founding",
               ...(variant && {
                 message: `I'm interested in the ${variantLabel} ${product.name} (Founding Partner ${formatINR(variant.founding)} / Buy Outright ${formatINR(variant.outright)}, before GST).`,
               }),
