@@ -216,6 +216,8 @@ export default function PurchasePanel({ product, categoryName }) {
             defaults={{
               quantity: qty,
               deliveryLocation: market,
+              product_id: product.serverProductId || product.productId || product.id || null,
+              product_display_variant_id: variant?.id || null,
               screen_display_variant_id: variant?.id || null,
               pricing_tier: "founding",
               ...(variant && {
