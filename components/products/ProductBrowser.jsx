@@ -81,7 +81,7 @@ export default function ProductBrowser() {
         <div className={`chip-group ${styles.chips}`} role="group" aria-label="Filter by category">
           <button type="button" className={`chip ${styles.chipAnim}`} aria-pressed={active === "all"} onClick={() => setCategory("all")}>
             {active === "all" && <motion.span layoutId="chip-pill" className={styles.pill} transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-            <b>All</b> <span className="chip__count">{results.length || staticProducts.length}</span>
+            <b>All</b> <span className="chip__count">{results.length}</span>
           </button>
           {staticCategories.map((c) => (
             <button
@@ -92,7 +92,7 @@ export default function ProductBrowser() {
               onClick={() => setCategory(c.slug)}
             >
               {active === c.slug && <motion.span layoutId="chip-pill" className={styles.pill} transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-              <b>{c.name}</b> <span className="chip__count">{counts[c.slug]}</span>
+              <b>{c.name}</b> {counts[c.slug] !== undefined ? <span className="chip__count">{counts[c.slug]}</span> : null}
             </button>
           ))}
         </div>
