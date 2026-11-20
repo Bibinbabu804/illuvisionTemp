@@ -1,14 +1,16 @@
 "use client";
 
-import { Fragment, useId, useState } from "react";
-import Link from "next/link";
+import { Fragment, useId, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
 import { displayOptions, formatINR } from "@/data/catalog";
+import { site } from "@/data/site";
 import { track, EVENTS } from "@/lib/analytics";
+import { buildWhatsAppUrl, normalizeWhatsAppNumber } from "@/lib/whatsapp";
+import { requestProductCode } from "@/services/api/products/requestCode.api";
 import styles from "./PriceTable.module.css";
 
-/** Event the product page listens for when Buy now is pressed on that same page. */
+/** Event the product page listens for when a variant is chosen. */
 export const SELECT_VARIANT_EVENT = "illuvision:select-variant";
 
 /** /screens/<slug>/?size=43&display=Panasonic — read back by PurchasePanel. */
@@ -31,30 +33,117 @@ const featuresFor = (display, size) =>
  * Price table for one format: every size + display with its regular,
  * Founding Partner and Buy Outright price (all before GST).
  *
- * With `productSlug`, each row expands (like the FAQ) to show what each
- * option includes and a Buy now button that opens the product page with
- * that size and display selected.
+ * With `productSlug`, each row expands to let the visitor choose between
+ * Founding Partner and Buy Outright plans and click Request Quote to generate
+ * a unique backend Request Code and open WhatsApp.
  */
 export default function PriceTable({ variants, caption, productSlug, productName }) {
   const [open, setOpen] = useState(-1);
+  const [selectedPlans, setSelectedPlans] = useState({});
+  const [requestingRow, setRequestingRow] = useState(null);
+  const [rowError, setRowError] = useState({});
+  const [rowResult, setRowResult] = useState({});
+  const idempotencyRef = useRef({});
   const id = useId();
   const expandable = Boolean(productSlug);
   const cols = expandable ? 6 : 5;
 
+  const getSelectedPlan = (rowIndex, v) => {
+    if (selectedPlans[rowIndex]) return selectedPlans[rowIndex];
+    if (v.founding != null) return "founding";
+    return "outright";
+  };
+
+  const selectPlan = (rowIndex, plan) => {
+    setSelectedPlans((prev) => ({ ...prev, [rowIndex]: plan }));
+    setRowError((prev) => ({ ...prev, [rowIndex]: "" }));
+    setRowResult((prev) => ({ ...prev, [rowIndex]: null }));
+    idempotencyRef.current[rowIndex] = "";
+  };
+
   const toggle = (i, v) => {
     const next = open === i ? -1 : i;
     setOpen(next);
-    if (next !== -1) track(EVENTS.SHOP_CTA, { section: "price-table", sku: productSlug, size: v.size, display: v.display, cta: "expand" });
+    if (next !== -1) {
+      track(EVENTS.SHOP_CTA, { section: "price-table", sku: productSlug, size: v.size, display: v.display, cta: "expand" });
+    }
   };
 
-  const onBuy = (e, v) => {
-    track(EVENTS.SHOP_CTA, { section: "price-table", sku: productSlug, size: v.size, display: v.display, cta: "buy-now" });
-    // Already on this product's page: select the variant in place.
-    if (window.location.pathname.replace(/\/$/, "") === `/screens/${productSlug}`) {
-      e.preventDefault();
-      window.history.replaceState(null, "", variantHref(productSlug, v));
-      window.dispatchEvent(new CustomEvent(SELECT_VARIANT_EVENT, { detail: { size: v.size, display: v.display } }));
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  const onRequestQuote = async (e, i, v) => {
+    e.stopPropagation();
+    if (requestingRow !== null) return;
+
+    const plan = getSelectedPlan(i, v);
+    const configuredWhatsApp = site.contact?.whatsapp;
+    if (!normalizeWhatsAppNumber(configuredWhatsApp)) {
+      setRowError((prev) => ({
+        ...prev,
+        [i]: "WhatsApp enquiry is currently unavailable. Please contact us directly by phone.",
+      }));
+      return;
+    }
+
+    setRequestingRow(i);
+    setRowError((prev) => ({ ...prev, [i]: "" }));
+
+    try {
+      const cacheSlot = `${i}-${plan}`;
+      if (!idempotencyRef.current[cacheSlot]) {
+        idempotencyRef.current[cacheSlot] =
+          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `prq-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      }
+
+      const productUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/screens/${productSlug}`
+          : `${site.url.replace(/\/+$/, "")}/screens/${productSlug}`;
+
+      const result = await requestProductCode({
+        slug: productSlug,
+        variantId: v.variant_id || v.id || null,
+        pricingPlan: plan,
+        quantity: 1,
+        productUrl,
+        idempotencyKey: idempotencyRef.current[cacheSlot],
+      });
+
+      const wa = buildWhatsAppUrl(configuredWhatsApp, result.whatsapp_message);
+      if (!wa.ok || !wa.url) {
+        setRowError((prev) => ({
+          ...prev,
+          [i]: wa.error || "Unable to open WhatsApp. Please contact us directly.",
+        }));
+        return;
+      }
+
+      setRowResult((prev) => ({
+        ...prev,
+        [i]: { code: result.request_code, whatsappUrl: wa.url },
+      }));
+
+      track(EVENTS.SHOP_CTA, {
+        section: "price-table",
+        sku: productSlug,
+        size: v.size,
+        display: v.display,
+        plan,
+        cta: "request-quote-whatsapp",
+        request_code: result.request_code,
+      });
+
+      const popup = window.open(wa.url, "_blank", "noopener,noreferrer");
+      if (!popup) {
+        window.location.href = wa.url;
+      }
+    } catch (error) {
+      setRowError((prev) => ({
+        ...prev,
+        [i]: error?.message || "Unable to generate a request code right now. Please try again.",
+      }));
+    } finally {
+      setRequestingRow(null);
     }
   };
 
@@ -81,6 +170,11 @@ export default function PriceTable({ variants, caption, productSlug, productName
             const isOpen = open === i;
             const panelId = `${id}-p-${i}`;
             const label = `${v.size}″ ${v.display}`;
+            const selectedPlan = getSelectedPlan(i, v);
+            const isBusy = requestingRow === i;
+            const errorMsg = rowError[i];
+            const generated = rowResult[i];
+
             return (
               <Fragment key={`${v.size}-${v.display}`}>
                 <tr
@@ -140,25 +234,54 @@ export default function PriceTable({ variants, caption, productSlug, productName
                               )}
                             </div>
 
-                            <div className={styles.options}>
-                              <div className={`${styles.option} ${styles.optionFounding}`}>
-                                <span className={styles.optionName}>Founding Partner</span>
+                            <div className={styles.options} role="radiogroup" aria-label={`Choose price plan for ${label}`}>
+                              <button
+                                type="button"
+                                role="radio"
+                                aria-checked={selectedPlan === "founding"}
+                                data-selected={selectedPlan === "founding" ? "true" : "false"}
+                                disabled={v.founding == null}
+                                className={styles.option}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectPlan(i, "founding");
+                                }}
+                              >
+                                <span className={styles.optionHead}>
+                                  <span className={styles.optionName}>Founding Partner</span>
+                                  <span className={styles.optionRadio} aria-hidden="true" />
+                                </span>
                                 <strong>{v.founding != null ? formatINR(v.founding) : "Unavailable"}</strong>
                                 <ul>
                                   {founding.map((t) => (
                                     <li key={t}><Icon name="check" size={14} /> {t}</li>
                                   ))}
                                 </ul>
-                              </div>
-                              <div className={styles.option}>
-                                <span className={styles.optionName}>Buy Outright</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                role="radio"
+                                aria-checked={selectedPlan === "outright"}
+                                data-selected={selectedPlan === "outright" ? "true" : "false"}
+                                disabled={v.outright == null}
+                                className={styles.option}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectPlan(i, "outright");
+                                }}
+                              >
+                                <span className={styles.optionHead}>
+                                  <span className={styles.optionName}>Buy Outright</span>
+                                  <span className={styles.optionRadio} aria-hidden="true" />
+                                </span>
                                 <strong>{v.outright != null ? formatINR(v.outright) : "Request quote"}</strong>
                                 <ul>
                                   {outright.map((t) => (
                                     <li key={t}><Icon name="check" size={14} /> {t}</li>
                                   ))}
                                 </ul>
-                              </div>
+                              </button>
                             </div>
 
                             <ul className={styles.features} aria-label={`${v.display} display features`}>
@@ -167,16 +290,43 @@ export default function PriceTable({ variants, caption, productSlug, productName
                               ))}
                             </ul>
 
+                            {errorMsg && (
+                              <p role="alert" style={{ color: "#b91c1c", fontSize: "0.85rem", fontWeight: 500, margin: 0 }}>
+                                {errorMsg}
+                              </p>
+                            )}
+
+                            {generated && (
+                              <p role="status" className="notice" style={{ margin: 0 }}>
+                                <Icon name="check" size={15} />
+                                <span>
+                                  Request Code <strong>{generated.code}</strong> ready.{" "}
+                                  <a
+                                    href={generated.whatsappUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ textDecoration: "underline", fontWeight: 600 }}
+                                  >
+                                    Open WhatsApp
+                                  </a>
+                                </span>
+                              </p>
+                            )}
+
                             <div className={styles.actions}>
-                              <Link
-                                href={variantHref(productSlug, v)}
+                              <button
+                                type="button"
                                 className="btn btn--accent"
-                                onClick={(e) => onBuy(e, v)}
+                                disabled={isBusy}
+                                aria-busy={isBusy}
+                                onClick={(e) => onRequestQuote(e, i, v)}
                               >
                                 <BtnIcon name="arrow" />
-                                <span>Buy now</span>
-                              </Link>
-                              <span className={styles.gst}>Prices before GST. 18% GST will be added.</span>
+                                <span>{isBusy ? "Generating…" : "Request Quote"}</span>
+                              </button>
+                              <span className={styles.gst}>
+                                Selected: <strong>{selectedPlan === "outright" ? "Buy Outright" : "Founding Partner"}</strong> · Prices before GST. 18% GST will be added.
+                              </span>
                             </div>
                           </div>
                         </div>

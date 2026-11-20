@@ -7,6 +7,7 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/
 export async function requestProductCode({
   slug,
   variantId = null,
+  pricingPlan = null,
   quantity = 1,
   deliveryLocation = "",
   productUrl = "",
@@ -18,6 +19,7 @@ export async function requestProductCode({
 
   const payload = {
     ...(variantId ? { product_display_variant_id: Number(variantId) } : {}),
+    ...(pricingPlan ? { pricing_plan: pricingPlan } : {}),
     quantity: Math.max(1, Number(quantity) || 1),
     ...(deliveryLocation && deliveryLocation.trim()
       ? { delivery_location: deliveryLocation.trim() }
