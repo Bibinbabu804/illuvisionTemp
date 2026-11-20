@@ -102,3 +102,67 @@ export async function getHeroProducts(limit = 6, currency = "INR") {
     return [];
   }
 }
+
+/**
+ * Fetch the dynamic Founding Partner Price List (2026) with Next.js ISR and tag-based caching.
+ * Never falls back to hardcoded prices; signals `unavailable: true` on upstream errors.
+ *
+ * @param {{ currency?: string, locale?: string, year?: number }} [options]
+ */
+export async function getFoundingPartnerPrices({ currency = "INR", locale = "en", year = 2026 } = {}) {
+  const params = new URLSearchParams({
+    currency,
+    locale,
+    year: String(year),
+  });
+  const url = `${API_BASE_URL}/v1/public/marketplace/products/founding-partner-prices?${params.toString()}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      next: {
+        revalidate: 300, // 5 minutes
+        tags: ["marketplace-founding-partner-prices", "marketplace-products"],
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      console.error(`[Server Data] Failed to fetch Founding Partner prices: HTTP ${res.status}`);
+      return {
+        title: `Founding Partner Price List ${year}`,
+        year,
+        currency,
+        products: [],
+        items: [],
+        last_updated_at: null,
+        unavailable: true,
+      };
+    }
+
+    const json = await res.json();
+    const data = json.data || {};
+    return {
+      title: data.title || `Founding Partner Price List ${year}`,
+      year: data.year || year,
+      currency: data.currency || currency,
+      products: Array.isArray(data.products) ? data.products : [],
+      items: Array.isArray(data.items) ? data.items : [],
+      last_updated_at: data.last_updated_at || null,
+      unavailable: false,
+    };
+  } catch (error) {
+    console.error("[Server Data] Error fetching Founding Partner prices:", error.message);
+    return {
+      title: `Founding Partner Price List ${year}`,
+      year,
+      currency,
+      products: [],
+      items: [],
+      last_updated_at: null,
+      unavailable: true,
+    };
+  }
+}

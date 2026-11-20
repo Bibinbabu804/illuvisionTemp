@@ -96,10 +96,14 @@ export default function PriceTable({ variants, caption, productSlug, productName
                   </td>
                   <td className={styles.regular}>
                     <span className="visually-hidden">Regular price </span>
-                    <s>{formatINR(v.regular)}</s>
+                    {v.regular != null ? <s>{formatINR(v.regular)}</s> : <span>—</span>}
                   </td>
-                  <td className={styles.founding}>{formatINR(v.founding)}</td>
-                  <td className={styles.outright}>{formatINR(v.outright)}</td>
+                  <td className={styles.founding}>
+                    {v.founding != null ? formatINR(v.founding) : "Unavailable"}
+                  </td>
+                  <td className={styles.outright}>
+                    {v.outright != null ? formatINR(v.outright) : "—"}
+                  </td>
                   {expandable && (
                     <td className={styles.toggleCol}>
                       <button
@@ -129,15 +133,17 @@ export default function PriceTable({ variants, caption, productSlug, productName
                               <p className={styles.detailTitle}>
                                 {label} {productName}
                               </p>
-                              <p className={styles.save}>
-                                Save {formatINR(v.regular - v.founding)} as a Founding Partner
-                              </p>
+                              {v.regular != null && v.founding != null && v.regular > v.founding && (
+                                <p className={styles.save}>
+                                  Save {formatINR(v.regular - v.founding)} as a Founding Partner
+                                </p>
+                              )}
                             </div>
 
                             <div className={styles.options}>
                               <div className={`${styles.option} ${styles.optionFounding}`}>
                                 <span className={styles.optionName}>Founding Partner</span>
-                                <strong>{formatINR(v.founding)}</strong>
+                                <strong>{v.founding != null ? formatINR(v.founding) : "Unavailable"}</strong>
                                 <ul>
                                   {founding.map((t) => (
                                     <li key={t}><Icon name="check" size={14} /> {t}</li>
@@ -146,7 +152,7 @@ export default function PriceTable({ variants, caption, productSlug, productName
                               </div>
                               <div className={styles.option}>
                                 <span className={styles.optionName}>Buy Outright</span>
-                                <strong>{formatINR(v.outright)}</strong>
+                                <strong>{v.outright != null ? formatINR(v.outright) : "Request quote"}</strong>
                                 <ul>
                                   {outright.map((t) => (
                                     <li key={t}><Icon name="check" size={14} /> {t}</li>

@@ -4,17 +4,23 @@ import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import PriceTable from "./PriceTable";
-import { products, pricing, formatINR } from "@/data/catalog";
+import { pricing, formatINR } from "@/data/catalog";
 import { site } from "@/data/site";
 import { EVENTS } from "@/lib/analytics";
 import styles from "./PriceList.module.css";
 
 const tel = (n) => `tel:${n.replace(/\s/g, "")}`;
 
-/** Founding Partner Price List 2026: every format, size and display. */
-export default function PriceList() {
+/**
+ * Founding Partner Price List 2026: rendered server-side via Next.js ISR
+ * using authoritative Marketplace Product & Variant pricing from the backend API.
+ */
+export default function PriceList({ pricingData }) {
   if (!site.features.publicPricing) return null;
   const { phone, phone2 } = site.contact;
+  const products = pricingData?.products || [];
+  const isUnavailable = Boolean(pricingData?.unavailable);
+  const year = pricingData?.year || 2026;
 
   return (
     <section className={`section ${styles.section}`} id="prices" aria-labelledby="prices-title">
@@ -22,7 +28,7 @@ export default function PriceList() {
         <SectionHeader
           label="Price list"
           id="prices-title"
-          lines={["Founding Partner", "Price List 2026."]}
+          lines={["Founding Partner", `Price List ${year}.`]}
           lead={`${pricing.foundingNote} Tap any row to see what's included and buy.`}
         />
 
@@ -33,19 +39,46 @@ export default function PriceList() {
           </p>
         </Reveal>
 
-        <div className={styles.grid}>
-          {products.map((p, i) => (
-            <Reveal key={p.slug} delay={(i % 2) * 80} className={styles.block}>
-              <div className={styles.blockHead}>
-                <h3>
-                  <Link href={`/screens/${p.slug}`}>{p.name}</Link>
-                </h3>
-                {p.badge && <span className="badge badge--green">{p.badge}</span>}
-              </div>
-              <PriceTable variants={p.variants} caption={`${p.name} prices`} productSlug={p.slug} productName={p.name} />
-            </Reveal>
-          ))}
-        </div>
+        {isUnavailable ? (
+          <div className="card" role="status" style={{ padding: "32px 24px", marginBottom: 32, textAlign: "center" }}>
+            <p style={{ fontWeight: 600, marginBottom: 8 }}>
+              Founding Partner pricing is temporarily unavailable.
+            </p>
+            <p style={{ opacity: 0.75, fontSize: "0.95rem" }}>
+              Please refresh shortly or contact our team directly for confirmed 2026 Founding Partner rates.
+            </p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="card" role="status" style={{ padding: "32px 24px", marginBottom: 32, textAlign: "center" }}>
+            <p style={{ fontWeight: 600, marginBottom: 8 }}>
+              No Founding Partner pricing is currently published.
+            </p>
+            <p style={{ opacity: 0.75, fontSize: "0.95rem" }}>
+              Contact our team to request an updated commercial quotation for your space.
+            </p>
+          </div>
+        ) : (
+          <div className={styles.grid}>
+            {products.map((p, i) => (
+              <Reveal key={p.product_slug || p.product_id} delay={(i % 2) * 80} className={styles.block}>
+                <div className={styles.blockHead}>
+                  <h3>
+                    <Link href={p.product_url || `/screens/${p.product_slug}`}>
+                      {p.product_name}
+                    </Link>
+                  </h3>
+                  {p.badge && <span className="badge badge--green">{p.badge}</span>}
+                </div>
+                <PriceTable
+                  variants={p.variants || []}
+                  caption={`${p.product_name} Founding Partner prices (${pricingData?.currency || "INR"})`}
+                  productSlug={p.product_slug}
+                  productName={p.product_name}
+                />
+              </Reveal>
+            ))}
+          </div>
+        )}
 
         <div className={styles.terms}>
           <Reveal className={`card ${styles.term} ${styles.termFounding}`}>

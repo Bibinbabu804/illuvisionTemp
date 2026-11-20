@@ -11,26 +11,33 @@ import FaqSection from "@/components/home/FaqSection";
 import GalleryWall from "@/components/home/GalleryWall";
 import ScreenStory from "@/components/products/ScreenStory";
 import { faqs } from "@/data/site";
-import { getPublicProductCategories } from "@/services/server/marketplace";
-import { pageMetadata } from "@/lib/seo";
+import { getPublicProductCategories, getFoundingPartnerPrices } from "@/services/server/marketplace";
+import { pageMetadata, JsonLd, foundingPartnerPriceListSchema } from "@/lib/seo";
 
-export const revalidate = 300; // Next.js ISR: revalidate product listing every 5 minutes
+export const revalidate = 300; // Next.js ISR: revalidate product listing & pricing every 5 minutes
 
 export const metadata = pageMetadata({
-  title: "Digital displays, standees and prices",
+  title: "Digital Displays, Standees & Founding Partner Price List 2026",
   description:
-    "Browse Illuvision digital displays: wall mount, A-frame, half-glass and full-glass standees in 32 to 55 inch, with Panasonic or Illuvision displays. See the Founding Partner Price List 2026.",
+    "Browse Illuvision commercial digital displays and explore the 2026 Founding Partner Price List across wall mount, A-frame, half-glass and full-glass standees in 32 to 55 inch.",
   path: "/screens",
 });
 
 export default async function ScreensPage() {
-  const categories = await getPublicProductCategories();
+  const [categories, foundingPartnerPricing] = await Promise.all([
+    getPublicProductCategories(),
+    getFoundingPartnerPrices(),
+  ]);
+
   const categoryNames = categories.length > 0
     ? categories.map((c) => c.name || c.category_name)
     : ["Digital Displays", "Standees", "Commercial Screens"];
 
+  const priceListJsonLd = foundingPartnerPriceListSchema(foundingPartnerPricing);
+
   return (
     <>
+      {priceListJsonLd && <JsonLd data={priceListJsonLd} />}
       {/* No hero banner: the page leads straight into the listings. */}
       <Breadcrumbs visible={false} items={[{ label: "Home", href: "/" }, { label: "Screens", href: "/screens" }]} />
       <section className="section section--lead" id="browse" aria-labelledby="screens-title">
@@ -41,7 +48,7 @@ export default async function ScreensPage() {
           </Suspense>
         </div>
       </section>
-      <PriceList />
+      <PriceList pricingData={foundingPartnerPricing} />
       <DisplayOptions />
       <NetworkOption />
       <GalleryWall />
