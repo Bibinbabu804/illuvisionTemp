@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static export: `npm run build` writes a plain HTML/CSS/JS site to /out
-  // (deploy that folder to Netlify or any static host).
-  output: "export",
+  // Support static export only when explicitly requested via env variable,
+  // enabling full Next.js ISR (Incremental Static Regeneration) and Route Handlers for production server.
+  ...(process.env.STATIC_EXPORT === "true" ? { output: "export" } : {}),
   // /screens/ → /screens/index.html — works on every static host without rewrites
   trailingSlash: true,
   images: {

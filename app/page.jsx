@@ -21,10 +21,12 @@ import AdIntro from "@/components/advertise/AdIntro";
 import NetworkSection from "@/components/advertise/NetworkSection";
 import Planner from "@/components/advertise/Planner";
 import AdStory from "@/components/advertise/AdStory";
-import { categories } from "@/data/catalog";
+import { getPublicProductCategories, getHeroProducts } from "@/services/server/marketplace";
 import { faqs } from "@/data/site";
 import { EVENTS } from "@/lib/analytics";
 import { pageMetadata } from "@/lib/seo";
+
+export const revalidate = 300; // Next.js ISR: revalidate homepage every 5 minutes
 
 export const metadata = {
   ...pageMetadata({
@@ -35,16 +37,24 @@ export const metadata = {
   title: { absolute: "Illuvision — Commercial digital screens & screen advertising" },
 };
 
-export default function HomePage() {
-  const names = categories.map((c) => c.name);
+export default async function HomePage() {
+  const [categories, heroProducts] = await Promise.all([
+    getPublicProductCategories(),
+    getHeroProducts(6),
+  ]);
+
+  const names = categories.length > 0
+    ? categories.map((c) => c.name || c.category_name)
+    : ["Digital Displays", "Standees", "Commercial Screens"];
+
   return (
     <>
       <PageView event={EVENTS.HOME_VIEW} />
       {/* Screen sales first. The hero carries the scroll-scrubbed city film. */}
-      <HomeBanner />
+      <HomeBanner heroProducts={heroProducts} />
       <Statement index={1} />
       <MarqueeRibbons items={names} hidden />
-      <CategoryList index={2} />
+      <CategoryList index={2} categories={categories} />
       <SizeVisualizer index={3} />
       <ScreenFinder index={4} />
       <FeaturedProducts index={5} />

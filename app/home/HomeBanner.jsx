@@ -28,7 +28,7 @@ const END = 0.72;
 // The banner video hands over to the scrubbed film within this much scroll.
 const HANDOVER = 0.035;
 
-export default function HomeBanner() {
+export default function HomeBanner({ heroProducts = [] }) {
   const ref = useRef(null);
   const reduce = useReducedMotion();
   // Hero progress 0 → 1 across its pinned scroll track, measured here from
@@ -163,7 +163,7 @@ export default function HomeBanner() {
               </div>
             </div>
 
-            <ScreenSpotlight className={styles.in} style={{ "--s": 6 }} />
+            <ScreenSpotlight products={heroProducts} className={styles.in} style={{ "--s": 6 }} />
 
             <button
               type="button"
