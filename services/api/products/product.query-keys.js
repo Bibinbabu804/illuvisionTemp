@@ -1,9 +1,9 @@
 /**
- * Centralized, parameter-aware TanStack Query keys for the Product domain.
+ * Centralized, parameter-aware TanStack Query keys for the Marketplace Product domain.
  */
 export const productKeys = {
-  all: ["products"],
-  featured: (limit = 6) => [...productKeys.all, "featured", { limit }],
+  all: ["marketplace", "products"],
+  featured: (limit = 8) => [...productKeys.all, "featured", { limit }],
   lists: () => [...productKeys.all, "list"],
   list: (filters = {}) => [...productKeys.lists(), filters],
   details: () => [...productKeys.all, "detail"],

@@ -8,7 +8,7 @@ import { api } from "@/lib/api/client";
  * @returns {Promise<{ data: import('./screen.types').PublicScreen[], pagination: any, stats: any }>}
  */
 export async function fetchScreens(filters = {}, signal) {
-  const json = await api.get("/screens", {
+  const json = await api.get("/v1/public/marketplace/screens", {
     params: { ...filters, is_public: 1 },
     signal,
   });
@@ -27,7 +27,7 @@ export async function fetchScreens(filters = {}, signal) {
  * @returns {Promise<any[]>}
  */
 export async function fetchMapScreens(filters = {}, signal) {
-  const json = await api.get("/screens/map", {
+  const json = await api.get("/v1/public/marketplace/screens/map", {
     params: { ...filters, is_public: 1 },
     signal,
   });
@@ -42,7 +42,7 @@ export async function fetchMapScreens(filters = {}, signal) {
  * @returns {Promise<import('./screen.types').PublicScreen>}
  */
 export async function fetchScreenDetail(id, signal) {
-  const json = await api.get(`/screens/${id}`, {
+  const json = await api.get(`/v1/public/marketplace/screens/${id}`, {
     signal,
   });
   return json.data;

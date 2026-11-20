@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import ProductCard from "./ProductCard";
 import Icon from "@/components/ui/Icon";
-import { categories as staticCategories, products as staticProducts } from "@/data/catalog";
+import { categories as staticCategories } from "@/data/catalog";
 import { usePublicProducts } from "@/services/api/products/product.queries";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./ProductBrowser.module.css";
@@ -36,44 +36,16 @@ export default function ProductBrowser() {
     return f;
   }, [active, query, size, sort]);
 
-  const { data: serverResult, isLoading, isError } = usePublicProducts(apiFilters);
+  const { data: serverResult, isLoading, isError, refetch } = usePublicProducts(apiFilters);
 
-  // Fallback computation for offline backend / network resilience
-  const fallbackResults = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = staticProducts
-      .filter(
-        (p) =>
-          (active === "all" || p.category === active) &&
-          (!q || `${p.name} ${p.sku} ${p.summary} ${p.useCases.join(" ")}`.toLowerCase().includes(q))
-      )
-      .map((p) => {
-        if (size === "any" || !p.variants) return p;
-        const variants = p.variants.filter((v) => v.size === Number(size));
-        if (!variants.length) return null;
-        return { ...p, variants, price: Math.min(...variants.map((v) => v.founding)) };
-      })
-      .filter(Boolean);
-    if (sort === "price-asc") return [...list].sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
-    if (sort === "price-desc") return [...list].sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
-    return list;
-  }, [active, query, sort, size]);
-
-  // Use dynamic server results when available, otherwise fallback gracefully
+  // Dynamic server results strictly from backend API (no silent mock fallback)
   const results = useMemo(() => {
-    if (serverResult?.data && Array.isArray(serverResult.data) && serverResult.data.length > 0) {
-      return serverResult.data;
-    }
-    if (!isLoading && (isError || !serverResult?.data || serverResult.data.length === 0)) {
-      return fallbackResults;
-    }
     return serverResult?.data || [];
-  }, [serverResult, isLoading, isError, fallbackResults]);
+  }, [serverResult]);
 
-  // Collect available sizes across products
+  // Collect available sizes across dynamic products
   const allSizes = useMemo(() => {
-    const source = results.length > 0 ? results : staticProducts;
-    return [...new Set(source.flatMap((p) => (p.variants || []).map((v) => v.size)))].sort((a, b) => a - b);
+    return [...new Set(results.flatMap((p) => (p.variants || []).map((v) => v.size || v.display_size_inches)))].filter(Boolean).sort((a, b) => a - b);
   }, [results]);
 
   const setCategory = (slug) => {
@@ -94,10 +66,14 @@ export default function ProductBrowser() {
     track(EVENTS.SHOP_CTA, { section: "listing-size", size: value });
   };
 
-  const counts = useMemo(
-    () => Object.fromEntries(staticCategories.map((c) => [c.slug, staticProducts.filter((p) => p.category === c.slug).length])),
-    []
-  );
+  const counts = useMemo(() => {
+    const map = {};
+    (serverResult?.data || []).forEach((p) => {
+      const cat = p.category || p.product_category_id;
+      if (cat) map[cat] = (map[cat] || 0) + 1;
+    });
+    return map;
+  }, [serverResult]);
 
   return (
     <div>
@@ -174,6 +150,14 @@ export default function ProductBrowser() {
             </li>
           ))}
         </ul>
+      ) : isError ? (
+        <div className={styles.empty}>
+          <p style={{ color: "var(--text-1, #1f2937)", fontWeight: 600, marginBottom: 8 }}>Unable to load screens</p>
+          <p style={{ color: "var(--text-3, #9ca3af)", fontSize: 14, marginBottom: 16 }}>Please check your connection and try again.</p>
+          <button type="button" className="text-link" onClick={() => refetch()}>
+            Retry
+          </button>
+        </div>
       ) : results.length ? (
         <LayoutGroup>
           <motion.ul layout className={styles.grid}>

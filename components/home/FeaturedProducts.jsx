@@ -5,7 +5,6 @@ import { motion, useScroll, useTransform, useSpring } from "motion/react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ProductCard from "@/components/products/ProductCard";
 import Button from "@/components/ui/Button";
-import { featuredProducts as staticFeaturedProducts } from "@/data/catalog";
 import { useFeaturedProducts } from "@/services/api/products/product.queries";
 import { EVENTS } from "@/lib/analytics";
 import styles from "./FeaturedProducts.module.css";
@@ -15,18 +14,10 @@ import styles from "./FeaturedProducts.module.css";
  * sideways. Tablet/mobile: a native swipeable row (no pinning).
  */
 export default function FeaturedProducts({ index }) {
-  const { data: serverProducts, isLoading, isError } = useFeaturedProducts(6);
+  const { data: serverProducts, isLoading, isError, refetch } = useFeaturedProducts(8);
 
-  // Dynamic products from API with graceful fallback to static catalog data on error
-  const items = useMemo(() => {
-    if (serverProducts && serverProducts.length > 0) {
-      return serverProducts;
-    }
-    if (!isLoading && (isError || !serverProducts || serverProducts.length === 0)) {
-      return staticFeaturedProducts().slice(0, 6);
-    }
-    return serverProducts || [];
-  }, [serverProducts, isLoading, isError]);
+  // Dynamic products strictly from API (no static mock fallback)
+  const items = useMemo(() => serverProducts || [], [serverProducts]);
 
   const sectionRef = useRef(null);
   const trackRef = useRef(null);
@@ -110,6 +101,16 @@ export default function FeaturedProducts({ index }) {
                   />
                 </li>
               ))
+            ) : isError ? (
+              <li className={styles.item} style={{ width: "100%", maxWidth: 420 }}>
+                <div style={{ padding: "40px 24px", textAlign: "center", borderRadius: 16, border: "1px dashed var(--border-color, #e5e7eb)" }}>
+                  <p style={{ color: "var(--text-1, #1f2937)", fontWeight: 600, marginBottom: 8 }}>Unable to load featured products</p>
+                  <p style={{ color: "var(--text-3, #9ca3af)", fontSize: 14, marginBottom: 16 }}>Please check your connection or try again.</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>
+                    Retry
+                  </Button>
+                </div>
+              </li>
             ) : items.length > 0 ? (
               items.map((p, i) => (
                 <li key={p.slug || p.id} className={styles.item} data-cursor="View">
@@ -121,7 +122,7 @@ export default function FeaturedProducts({ index }) {
               ))
             ) : (
               <li className={styles.item}>
-                <p style={{ color: "var(--text-3)", padding: "40px 0" }}>No featured screens currently available.</p>
+                <p style={{ color: "var(--text-3)", padding: "40px 0" }}>No featured products currently available.</p>
               </li>
             )}
           </motion.ul>
