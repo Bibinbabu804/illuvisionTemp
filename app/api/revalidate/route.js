@@ -6,6 +6,7 @@ const ALLOWED_TAGS = [
   "marketplace-products-featured",
   "marketplace-product-categories",
   "marketplace-founding-partner-prices",
+  "marketplace-visualizer",
   "marketplace-screens",
 ];
 

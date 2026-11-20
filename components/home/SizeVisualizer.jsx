@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import Button from "@/components/ui/Button";
 import { EVENTS, track } from "@/lib/analytics";
+import { normalizeVisualizerConfig } from "@/lib/visualizerConfig";
 import styles from "./SizeVisualizer.module.css";
 
 /**
  * Pick a format and a size to see it next to a person, with screen
  * dimensions and a general viewing-distance guide.
  *
- * Formats and sizes follow the customer brochure. Screen dimensions are
- * 16:9 geometry from the diagonal; the stands, panels and bases are drawn
- * to an approximate scale for illustration only, not product drawings.
+ * Formats and commercially available sizes come dynamically from the
+ * Marketplace backend API via Next.js ISR (normalized through a safe adapter
+ * with versioned fallback on upstream failure). Screen dimensions are 16:9
+ * geometry from the diagonal; the stands, panels and bases are drawn to an
+ * approximate scale for illustration only, not product drawings.
  *
  * Everything is sized in real centimetres via container-query units
  * (1cm = 100cqh / 300, so the scene always shows 3 m of height). The person
@@ -23,60 +26,44 @@ import styles from "./SizeVisualizer.module.css";
 const PERSON_CM = 172;
 const WALL_CENTER_CM = 150; // wall-mounted screens are centred at 1.5 m
 
-/** On-screen artwork cropped from the customer brochure photos. */
-const screenArt = (name) => `/images/products/screen-${name}.webp`;
-
-const formats = [
-  {
-    id: "wall-mount",
-    label: "Wall mount",
-    sizes: [32, 43, 55],
-    note: "Saves floor space.",
-    product: "wall-mount-display",
-    content: screenArt("wall-mount"),
-  },
-  {
-    id: "a-frame",
-    label: "A-frame standee",
-    sizes: [32, 43],
-    note: "Folds away, perfect for entrances.",
-    product: "a-frame-standee",
-    content: screenArt("a-frame"),
-  },
-  {
-    id: "half-glass",
-    label: "Half-glass standee",
-    sizes: [32, 43, 50, 55],
-    note: "Sleek, with a solid lower panel.",
-    product: "half-glass-standee",
-    content: screenArt("half-glass"),
-  },
-  {
-    id: "full-glass",
-    label: "Full-glass standee",
-    sizes: [32, 43, 50, 55],
-    note: "Premium full-height glass front.",
-    product: "full-glass-standee",
-    content: screenArt("full-glass"),
-  },
-];
+const ENCLOSURE_PARTS = {
+  "wall-mount": { below: 0, base: 0 },
+  "a-frame": { below: 32, base: 0 },
+  "half-glass": { below: 72, base: 6 },
+  "full-glass": { below: 73, base: 5 },
+};
 
 const cm = (n) => `calc(var(--cm) * ${n.toFixed(2)})`;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-export default function SizeVisualizer({ index }) {
-  const [formatId, setFormatId] = useState("wall-mount");
-  const [inches, setInches] = useState(43);
-  const [portrait, setPortrait] = useState(false);
+export default function SizeVisualizer({ index, config }) {
+  const normalized = useMemo(() => normalizeVisualizerConfig(config), [config]);
+  const formats = normalized.formats;
 
-  const format = formats.find((f) => f.id === formatId);
-  const isWall = format.id === "wall-mount";
+  const initialFormat = formats.find((f) => f.id === normalized.defaultFormatId) || formats[0] || null;
+
+  const [formatId, setFormatId] = useState(initialFormat?.id ?? "");
+  const [inches, setInches] = useState(normalized.defaultSizeInches ?? initialFormat?.sizes?.[0] ?? 43);
+  const [portrait, setPortrait] = useState(
+    initialFormat ? initialFormat.defaultOrientation === "portrait" : false
+  );
+
+  // Explicit empty configuration from backend -> hide cleanly without showing stale fallback
+  if (formats.length === 0) {
+    return null;
+  }
+
+  const format = formats.find((f) => f.id === formatId) || formats[0];
+  const enclosure = format.enclosureType;
+  const isWall = enclosure === "wall-mount";
   const upright = portrait;
-  const [minIn, maxIn] = [format.sizes[0], format.sizes[format.sizes.length - 1]];
+  const minIn = format.sizes[0];
+  const maxIn = format.sizes[format.sizes.length - 1];
+  const safeInches = clamp(inches, minIn, maxIn);
 
   // 16:9 screen geometry from the diagonal
-  const diagCm = inches * 2.54;
+  const diagCm = safeInches * 2.54;
   const longCm = diagCm * (16 / Math.hypot(16, 9));
   const shortCm = diagCm * (9 / Math.hypot(16, 9));
   const wCm = upright ? shortCm : longCm;
@@ -89,12 +76,7 @@ export default function SizeVisualizer({ index }) {
   const bezel = isWall ? 1.5 : 3;
   const unitW = wCm + bezel * 2;
   const screenBoxH = hCm + bezel * 2;
-  const parts = {
-    "wall-mount": { below: 0, base: 0 },
-    "a-frame": { below: 32, base: 0 },
-    "half-glass": { below: 72, base: 6 },
-    "full-glass": { below: 73, base: 5 },
-  }[format.id];
+  const parts = ENCLOSURE_PARTS[enclosure] || ENCLOSURE_PARTS["wall-mount"];
   const unitH = screenBoxH + parts.below + parts.base;
   const bottomCm = isWall ? Math.max(20, WALL_CENTER_CM - screenBoxH / 2) : 0;
 
@@ -104,19 +86,26 @@ export default function SizeVisualizer({ index }) {
 
   const chooseFormat = (id) => {
     const f = formats.find((x) => x.id === id);
+    if (!f) return;
     setFormatId(id);
     const [lo, hi] = [f.sizes[0], f.sizes[f.sizes.length - 1]];
     setInches((cur) => clamp(cur, lo, hi));
-    // wall mount usually hangs landscape, standees stand portrait
-    setPortrait(id !== "wall-mount");
+    setPortrait(f.defaultOrientation === "portrait");
     track(EVENTS.PLANNER_CHANGE, { section: "size-visualiser", format: id });
   };
 
-  const pct = ((inches - minIn) / (maxIn - minIn)) * 100;
-  const offered = format.sizes.includes(inches);
+  // Guard against division by zero when a format has only a single commercial size
+  const hasRange = maxIn > minIn;
+  const pct = hasRange ? ((safeInches - minIn) / (maxIn - minIn)) * 100 : 100;
+  const offered = format.sizes.includes(safeInches);
 
   return (
-    <section className={`section ${styles.section}`} aria-labelledby="size-title">
+    <section
+      className={`section ${styles.section}`}
+      aria-labelledby="size-title"
+      data-visualizer-source={normalized.source}
+      data-visualizer-revision={normalized.revision}
+    >
       <div className="container">
         <SectionHeader
           index={index}
@@ -138,10 +127,10 @@ export default function SizeVisualizer({ index }) {
 
             <div
               className={styles.unit}
-              data-format={format.id}
+              data-format={enclosure}
               style={{ width: cm(unitW), height: cm(unitH), bottom: cm(bottomCm), "--bezel": cm(bezel) }}
             >
-              {format.id === "a-frame" && (
+              {enclosure === "a-frame" && (
                 <span className={styles.legs} style={{ height: cm(parts.below + screenBoxH * 0.6) }} />
               )}
               <div className={styles.screenBox} style={{ height: cm(screenBoxH) }}>
@@ -149,10 +138,10 @@ export default function SizeVisualizer({ index }) {
                   className={styles.content}
                   style={{ backgroundImage: `url(${format.content})` }}
                 />
-                <span className={styles.screenLabel}>{inches}&Prime;</span>
+                <span className={styles.screenLabel}>{safeInches}&Prime;</span>
               </div>
-              {format.id === "half-glass" && <span className={styles.panel} style={{ height: cm(parts.below) }} />}
-              {format.id === "full-glass" && <span className={styles.glass} style={{ height: cm(parts.below) }} />}
+              {enclosure === "half-glass" && <span className={styles.panel} style={{ height: cm(parts.below) }} />}
+              {enclosure === "full-glass" && <span className={styles.glass} style={{ height: cm(parts.below) }} />}
               {parts.base > 0 && <span className={styles.base} style={{ height: cm(parts.base) }} />}
             </div>
 
@@ -162,7 +151,7 @@ export default function SizeVisualizer({ index }) {
           <div className={styles.controls}>
             <div className={styles.readout}>
               <div>
-                <span className={styles.big}>{inches}&Prime;</span>
+                <span className={styles.big}>{safeInches}&Prime;</span>
                 <span className={styles.small}>{format.label} · diagonal</span>
               </div>
               <div>
@@ -178,32 +167,34 @@ export default function SizeVisualizer({ index }) {
             <span className={styles.sliderLabel}>Format</span>
             <div className="chip-group" role="group" aria-label="Format">
               {formats.map((f) => (
-                <button key={f.id} type="button" className="chip" aria-pressed={formatId === f.id} onClick={() => chooseFormat(f.id)}>
+                <button key={f.id} type="button" className="chip" aria-pressed={format.id === f.id} onClick={() => chooseFormat(f.id)}>
                   {f.label}
                 </button>
               ))}
             </div>
             <p className={styles.formatNote}>
-              {`${format.sizes.join(" / ")} inch. ${format.note}`}
+              {`${format.sizes.join(" / ")} inch.${format.note ? ` ${format.note}` : ""}`}
             </p>
 
             <label className={styles.sliderLabel} htmlFor="size-range">Screen size</label>
-            <input
-              id="size-range"
-              type="range"
-              min={minIn}
-              max={maxIn}
-              step="1"
-              value={inches}
-              onChange={(e) => setInches(Number(e.target.value))}
-              onPointerUp={() => track(EVENTS.PLANNER_CHANGE, { section: "size-visualiser", format: format.id, inches })}
-              aria-valuetext={`${inches} inch`}
-              className={styles.range}
-              style={{ "--p": `${pct}%` }}
-            />
+            {hasRange && (
+              <input
+                id="size-range"
+                type="range"
+                min={minIn}
+                max={maxIn}
+                step="1"
+                value={safeInches}
+                onChange={(e) => setInches(Number(e.target.value))}
+                onPointerUp={() => track(EVENTS.PLANNER_CHANGE, { section: "size-visualiser", format: format.id, inches: safeInches })}
+                aria-valuetext={`${safeInches} inch`}
+                className={styles.range}
+                style={{ "--p": `${pct}%` }}
+              />
+            )}
             <div className="chip-group" role="group" aria-label="Screen size">
               {format.sizes.map((s) => (
-                <button key={s} type="button" className="chip" aria-pressed={inches === s} onClick={() => setInches(s)}>
+                <button key={s} type="button" className="chip" aria-pressed={safeInches === s} onClick={() => setInches(s)}>
                   {s}&Prime;
                 </button>
               ))}
@@ -211,7 +202,7 @@ export default function SizeVisualizer({ index }) {
 
             {!offered && (
               <p className={styles.formatNote}>
-                {inches}&Prime; is shown for comparison. The {format.label.toLowerCase()} comes in {format.sizes.join(", ")} inch.
+                {safeInches}&Prime; is shown for comparison. The {format.label.toLowerCase()} comes in {format.sizes.join(", ")} inch.
               </p>
             )}
 
@@ -222,11 +213,11 @@ export default function SizeVisualizer({ index }) {
             </div>
 
             <Button
-              href={`/screens/${format.product}#prices`}
+              href={format.productUrl}
               variant="accent"
               icon="screen"
               event={EVENTS.SHOP_CTA}
-              eventProps={{ section: "size-visualiser", format: format.id, inches }}
+              eventProps={{ section: "size-visualiser", format: format.id, inches: safeInches }}
             >
               {`See ${format.label.toLowerCase()} prices`}
             </Button>

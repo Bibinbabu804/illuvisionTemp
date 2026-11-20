@@ -236,3 +236,40 @@ export async function getPublicProductSlugs() {
     return [];
   }
 }
+
+/**
+ * Fetch consolidated Marketplace Size Visualizer configuration with Next.js ISR.
+ * Returns { ok: true, data } on success or { ok: false, error } on failure so
+ * the frontend adapter can distinguish explicit empty lists from upstream outages.
+ */
+export async function getVisualizerConfiguration() {
+  const url = `${API_BASE_URL}/v1/public/marketplace/visualizer/configuration`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      next: {
+        revalidate: 1800, // 30 minutes
+        tags: ["marketplace-visualizer", "marketplace-products"],
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      console.error(`[Server Data] Failed to fetch visualizer configuration: HTTP ${res.status}`);
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const json = await res.json();
+    if (!json || typeof json !== "object" || !json.data) {
+      return { ok: false, error: "Invalid visualizer configuration payload" };
+    }
+
+    return { ok: true, data: json.data };
+  } catch (error) {
+    console.error("[Server Data] Error fetching visualizer configuration:", error.message);
+    return { ok: false, error: error.message };
+  }
+}

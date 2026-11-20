@@ -11,7 +11,7 @@ import FaqSection from "@/components/home/FaqSection";
 import GalleryWall from "@/components/home/GalleryWall";
 import ScreenStory from "@/components/products/ScreenStory";
 import { faqs } from "@/data/site";
-import { getPublicProductCategories, getFoundingPartnerPrices } from "@/services/server/marketplace";
+import { getPublicProductCategories, getFoundingPartnerPrices, getVisualizerConfiguration } from "@/services/server/marketplace";
 import { pageMetadata, JsonLd, foundingPartnerPriceListSchema } from "@/lib/seo";
 
 export const revalidate = 300; // Next.js ISR: revalidate product listing & pricing every 5 minutes
@@ -24,9 +24,10 @@ export const metadata = pageMetadata({
 });
 
 export default async function ScreensPage() {
-  const [categories, foundingPartnerPricing] = await Promise.all([
+  const [categories, foundingPartnerPricing, visualizerConfig] = await Promise.all([
     getPublicProductCategories(),
     getFoundingPartnerPrices(),
+    getVisualizerConfiguration(),
   ]);
 
   const categoryNames = categories.length > 0
@@ -53,7 +54,7 @@ export default async function ScreensPage() {
       <NetworkOption />
       <GalleryWall />
       <ScreenStory />
-      <SizeVisualizer />
+      <SizeVisualizer config={visualizerConfig} />
       <ScreenFinder />
       <MarqueeRibbons panel hidden items={categoryNames} />
       <FaqSection items={faqs.general} />

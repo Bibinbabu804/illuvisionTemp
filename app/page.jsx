@@ -21,7 +21,7 @@ import AdIntro from "@/components/advertise/AdIntro";
 import NetworkSection from "@/components/advertise/NetworkSection";
 import Planner from "@/components/advertise/Planner";
 import AdStory from "@/components/advertise/AdStory";
-import { getPublicProductCategories, getHeroProducts } from "@/services/server/marketplace";
+import { getPublicProductCategories, getHeroProducts, getVisualizerConfiguration } from "@/services/server/marketplace";
 import { faqs } from "@/data/site";
 import { EVENTS } from "@/lib/analytics";
 import { pageMetadata } from "@/lib/seo";
@@ -38,9 +38,10 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  const [categories, heroProducts] = await Promise.all([
+  const [categories, heroProducts, visualizerConfig] = await Promise.all([
     getPublicProductCategories(),
     getHeroProducts(6),
+    getVisualizerConfiguration(),
   ]);
 
   const names = categories.length > 0
@@ -55,7 +56,7 @@ export default async function HomePage() {
       <Statement index={1} />
       <MarqueeRibbons items={names} hidden />
       <CategoryList index={2} categories={categories} />
-      <SizeVisualizer index={3} />
+      <SizeVisualizer index={3} config={visualizerConfig} />
       <ScreenFinder index={4} />
       <FeaturedProducts index={5} />
       <BuyingStory index={6} />
