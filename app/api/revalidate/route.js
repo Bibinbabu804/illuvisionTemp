@@ -11,7 +11,11 @@ const ALLOWED_TAGS = [
 
 const isAllowedTag = (tag) =>
   ALLOWED_TAGS.includes(tag) ||
-  (typeof tag === "string" && tag.startsWith("marketplace-category:") && tag.length <= 150);
+  (typeof tag === "string" &&
+    tag.length <= 160 &&
+    (tag.startsWith("marketplace-category:") ||
+      tag.startsWith("marketplace-product:") ||
+      tag.startsWith("marketplace-product-pricing:")));
 
 export async function POST(request) {
   const secretHeader = request.headers.get("x-revalidate-secret");

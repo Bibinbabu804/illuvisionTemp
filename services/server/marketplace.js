@@ -166,3 +166,73 @@ export async function getFoundingPartnerPrices({ currency = "INR", locale = "en"
     };
   }
 }
+
+/**
+ * Fetch a single public Marketplace Product by slug with Next.js ISR and granular tag caching.
+ * Returns null if the product does not exist or is inactive (404).
+ *
+ * @param {string} slug
+ * @param {{ locale?: string, currency?: string }} [options]
+ */
+export async function getMarketplaceProductBySlug(slug, { locale = "en", currency = "INR" } = {}) {
+  if (!slug) return null;
+  const cleanSlug = encodeURIComponent(String(slug));
+  const params = new URLSearchParams({ locale, currency });
+  const url = `${API_BASE_URL}/v1/public/marketplace/products/${cleanSlug}?${params.toString()}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      next: {
+        revalidate: 300, // 5 minutes
+        tags: [
+          "marketplace-products",
+          `marketplace-product:${slug}`,
+          `marketplace-product-pricing:${slug}`,
+        ],
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (res.status === 404) {
+      return null;
+    }
+
+    if (!res.ok) {
+      console.error(`[Server Data] Failed to fetch product "${slug}": HTTP ${res.status}`);
+      return null;
+    }
+
+    const json = await res.json();
+    return json.data || null;
+  } catch (error) {
+    console.error(`[Server Data] Error fetching product "${slug}":`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Fetch active public product slugs for optional build-time static pre-warming.
+ */
+export async function getPublicProductSlugs() {
+  const url = `${API_BASE_URL}/v1/public/marketplace/products?per_page=50`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      next: {
+        revalidate: 300,
+        tags: ["marketplace-products"],
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.data || []).map((p) => p.slug).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
