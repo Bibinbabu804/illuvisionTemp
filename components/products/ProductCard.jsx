@@ -17,8 +17,10 @@ export function priceLabel(product) {
 }
 
 export default function ProductCard({ product, section = "listing", priority = false, tall = false }) {
-  const category = getCategory(product.category);
-  const [primary, secondary] = product.images;
+  const category = getCategory(product.category) || (product.category_name ? { name: product.category_name, slug: product.category } : null);
+  const primary = product.images?.[0] || { src: `/images/products/${product.slug}.webp`, alt: product.name, pos: "50% 50%" };
+  const secondary = product.images?.[1] || null;
+  const useCasesList = Array.isArray(product.useCases) ? product.useCases : (Array.isArray(product.ideal_for) ? product.ideal_for : ["Shops", "Clinics"]);
   const onClick = () =>
     track(section === "featured" ? EVENTS.FEATURED_PRODUCT : EVENTS.SCREEN_DETAIL, {
       sku: product.sku,
@@ -88,7 +90,7 @@ export default function ProductCard({ product, section = "listing", priority = f
           </div>
           <div>
             <dt>Ideal for</dt>
-            <dd>{product.useCases.slice(0, 2).join(", ")}</dd>
+            <dd>{useCasesList.slice(0, 2).join(", ")}</dd>
           </div>
         </dl>
 

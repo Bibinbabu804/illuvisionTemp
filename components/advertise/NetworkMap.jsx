@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
-import { screens, screenTypes, statuses, areas, cities, isSample, mapConfig } from "@/data/network";
+import { screens as staticScreens, screenTypes, statuses, areas, cities, isSample, mapConfig } from "@/data/network";
+import { useScreens } from "@/services/api/screens/screen.queries";
 import { track, EVENTS } from "@/lib/analytics";
 import { savePlanner } from "@/lib/plannerStore";
 import "leaflet/dist/leaflet.css";
@@ -52,6 +53,33 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
   const [touchHint, setTouchHint] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
+  const { data: serverScreensData } = useScreens({ per_page: 50 });
+
+  const screens = useMemo(() => {
+    if (serverScreensData?.data && Array.isArray(serverScreensData.data) && serverScreensData.data.length > 0) {
+      const mapped = serverScreensData.data
+        .filter((s) => s.latitude && s.longitude)
+        .map((s) => ({
+          id: String(s.screen_code || s.id),
+          name: s.location_name || s.name,
+          venue: s.name,
+          area: s.city?.name || "Kerala",
+          type: s.screen_type?.toLowerCase().includes("led")
+            ? "led"
+            : s.screen_type?.toLowerCase().includes("outdoor")
+            ? "outdoor"
+            : s.screen_type?.toLowerCase().includes("standee")
+            ? "standee"
+            : "indoor",
+          status: s.booking_status === "available" ? "available" : "enquiry",
+          lat: Number(s.latitude),
+          lng: Number(s.longitude),
+        }));
+      if (mapped.length > 0) return mapped;
+    }
+    return staticScreens;
+  }, [serverScreensData]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = screens.filter(
@@ -62,7 +90,7 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
     );
     if (!userPos) return list;
     return list.map((s) => ({ ...s, km: distanceKm(userPos, s) })).sort((a, b) => a.km - b.km);
-  }, [types, area, query, userPos]);
+  }, [types, area, query, userPos, screens]);
 
   const selectedScreen = results.find((s) => s.id === selected) || null;
 

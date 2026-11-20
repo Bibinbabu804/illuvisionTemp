@@ -7,6 +7,7 @@ import LogoIntro from "@/components/layout/LogoIntro";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import Cursor from "@/components/motion/Cursor";
 import ScrollProgress from "@/components/motion/ScrollProgress";
+import QueryProvider from "@/components/providers/QueryProvider";
 import { site } from "@/data/site";
 import { JsonLd, organizationSchema } from "@/lib/seo";
 import logo from "@/assets/images/logo.png";
@@ -58,16 +59,18 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body>
-        <a href="#main" className="skip-link">Skip to content</a>
-        <div id="top-sentinel" aria-hidden="true" style={{ position: "absolute", top: 0, height: 24, width: 1 }} />
-        <LogoIntro />
-        <SmoothScroll />
-        <Cursor />
-        <ScrollProgress />
-        <div className="gridlines" aria-hidden="true"><span /><span /><span /><span /><span /></div>
-        <Header />
-        <main id="main">{children}</main>
-        <Footer />
+        <QueryProvider>
+          <a href="#main" className="skip-link">Skip to content</a>
+          <div id="top-sentinel" aria-hidden="true" style={{ position: "absolute", top: 0, height: 24, width: 1 }} />
+          <LogoIntro />
+          <SmoothScroll />
+          <Cursor />
+          <ScrollProgress />
+          <div className="gridlines" aria-hidden="true"><span /><span /><span /><span /><span /></div>
+          <Header />
+          <main id="main">{children}</main>
+          <Footer />
+        </QueryProvider>
         <JsonLd data={organizationSchema(logo.src)} />
       </body>
     </html>

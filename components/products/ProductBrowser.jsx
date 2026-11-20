@@ -5,7 +5,8 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import ProductCard from "./ProductCard";
 import Icon from "@/components/ui/Icon";
-import { categories, products } from "@/data/catalog";
+import { categories as staticCategories, products as staticProducts } from "@/data/catalog";
+import { usePublicProducts } from "@/services/api/products/product.queries";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./ProductBrowser.module.css";
 
@@ -18,30 +19,34 @@ export default function ProductBrowser() {
   const [sort, setSort] = useState("recommended");
   const [size, setSize] = useState("any");
 
-  // every size offered across the range, e.g. [32, 43, 50, 55]
-  const allSizes = useMemo(
-    () => [...new Set(products.flatMap((p) => (p.variants || []).map((v) => v.size)))].sort((a, b) => a - b),
-    []
-  );
+  // Query parameters formatted for the backend API
+  const apiFilters = useMemo(() => {
+    const f = {};
+    if (active !== "all") f.category = active;
+    if (query.trim()) f.search = query.trim();
+    if (size !== "any") f.size = size;
+    if (sort === "price-asc") {
+      f.sort_by = "price";
+      f.sort_order = "asc";
+    } else if (sort === "price-desc") {
+      f.sort_by = "price";
+      f.sort_order = "desc";
+    }
+    f.per_page = 50;
+    return f;
+  }, [active, query, size, sort]);
 
-  const setCategory = (slug) => {
-    const next = new URLSearchParams(params);
-    if (slug === "all") next.delete("category");
-    else next.set("category", slug);
-    const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    track(EVENTS.SHOP_CTA, { section: "category-filter", category: slug });
-  };
+  const { data: serverResult, isLoading, isError } = usePublicProducts(apiFilters);
 
-  const results = useMemo(() => {
+  // Fallback computation for offline backend / network resilience
+  const fallbackResults = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = products
+    const list = staticProducts
       .filter(
         (p) =>
           (active === "all" || p.category === active) &&
           (!q || `${p.name} ${p.sku} ${p.summary} ${p.useCases.join(" ")}`.toLowerCase().includes(q))
       )
-      // a size filter keeps products offered in that size, priced for it
       .map((p) => {
         if (size === "any" || !p.variants) return p;
         const variants = p.variants.filter((v) => v.size === Number(size));
@@ -54,6 +59,32 @@ export default function ProductBrowser() {
     return list;
   }, [active, query, sort, size]);
 
+  // Use dynamic server results when available, otherwise fallback gracefully
+  const results = useMemo(() => {
+    if (serverResult?.data && Array.isArray(serverResult.data) && serverResult.data.length > 0) {
+      return serverResult.data;
+    }
+    if (!isLoading && (isError || !serverResult?.data || serverResult.data.length === 0)) {
+      return fallbackResults;
+    }
+    return serverResult?.data || [];
+  }, [serverResult, isLoading, isError, fallbackResults]);
+
+  // Collect available sizes across products
+  const allSizes = useMemo(() => {
+    const source = results.length > 0 ? results : staticProducts;
+    return [...new Set(source.flatMap((p) => (p.variants || []).map((v) => v.size)))].sort((a, b) => a - b);
+  }, [results]);
+
+  const setCategory = (slug) => {
+    const next = new URLSearchParams(params);
+    if (slug === "all") next.delete("category");
+    else next.set("category", slug);
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    track(EVENTS.SHOP_CTA, { section: "category-filter", category: slug });
+  };
+
   const onSort = (value) => {
     setSort(value);
     track(EVENTS.SHOP_CTA, { section: "listing-sort", sort: value });
@@ -64,7 +95,7 @@ export default function ProductBrowser() {
   };
 
   const counts = useMemo(
-    () => Object.fromEntries(categories.map((c) => [c.slug, products.filter((p) => p.category === c.slug).length])),
+    () => Object.fromEntries(staticCategories.map((c) => [c.slug, staticProducts.filter((p) => p.category === c.slug).length])),
     []
   );
 
@@ -74,9 +105,9 @@ export default function ProductBrowser() {
         <div className={`chip-group ${styles.chips}`} role="group" aria-label="Filter by category">
           <button type="button" className={`chip ${styles.chipAnim}`} aria-pressed={active === "all"} onClick={() => setCategory("all")}>
             {active === "all" && <motion.span layoutId="chip-pill" className={styles.pill} transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-            <b>All</b> <span className="chip__count">{products.length}</span>
+            <b>All</b> <span className="chip__count">{results.length || staticProducts.length}</span>
           </button>
-          {categories.map((c) => (
+          {staticCategories.map((c) => (
             <button
               key={c.slug}
               type="button"
@@ -104,7 +135,7 @@ export default function ProductBrowser() {
 
       <div className={styles.filters}>
         <p className={styles.count} aria-live="polite">
-          Showing {results.length} of {products.length} screens
+          Showing {results.length} screen{results.length === 1 ? "" : "s"}
           {size !== "any" && ` in ${size}″`}
         </p>
         <div className={styles.selects}>
@@ -128,14 +159,29 @@ export default function ProductBrowser() {
         </div>
       </div>
 
-      {results.length ? (
+      {isLoading && results.length === 0 ? (
+        <ul className={styles.grid}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <li key={`grid-skeleton-${i}`} className={styles.item} aria-hidden="true">
+              <div
+                style={{
+                  height: 480,
+                  borderRadius: 16,
+                  background: "rgba(0, 0, 0, 0.04)",
+                  animation: "pulse 1.8s ease-in-out infinite",
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : results.length ? (
         <LayoutGroup>
           <motion.ul layout className={styles.grid}>
             <AnimatePresence mode="popLayout">
               {results.map((p, i) => (
                 <motion.li
                   layout
-                  key={p.slug}
+                  key={p.slug || p.id}
                   className={styles.item}
                   initial={{ opacity: 0, y: 60, rotateX: 18, scale: 0.94 }}
                   whileInView={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
