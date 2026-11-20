@@ -8,6 +8,10 @@ const ALLOWED_TAGS = [
   "marketplace-screens",
 ];
 
+const isAllowedTag = (tag) =>
+  ALLOWED_TAGS.includes(tag) ||
+  (typeof tag === "string" && tag.startsWith("marketplace-category:") && tag.length <= 150);
+
 export async function POST(request) {
   const secretHeader = request.headers.get("x-revalidate-secret");
   const url = new URL(request.url);
@@ -29,7 +33,7 @@ export async function POST(request) {
 
     const revalidatedTags = [];
     for (const tag of tagList) {
-      if (ALLOWED_TAGS.includes(tag)) {
+      if (isAllowedTag(tag)) {
         revalidateTag(tag);
         revalidatedTags.push(tag);
       }

@@ -35,6 +35,40 @@ export async function getPublicProductCategories(locale = "en") {
 }
 
 /**
+ * Fetch a single public active product category by slug with Next.js ISR.
+ *
+ * @param {string} slug
+ * @param {string} [locale='en']
+ */
+export async function getPublicProductCategory(slug, locale = "en") {
+  if (!slug) return null;
+  const url = `${API_BASE_URL}/v1/public/marketplace/categories/${encodeURIComponent(slug)}?locale=${encodeURIComponent(locale)}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      next: {
+        revalidate: 1800, // 30 minutes
+        tags: ["marketplace-product-categories", `marketplace-category:${slug}`],
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const json = await res.json();
+    return json.data || null;
+  } catch (error) {
+    console.error(`[Server Data] Error fetching category "${slug}":`, error.message);
+    return null;
+  }
+}
+
+/**
  * Fetch hero carousel / featured products with Next.js ISR and tag-based caching.
  *
  * @param {number} [limit=6]

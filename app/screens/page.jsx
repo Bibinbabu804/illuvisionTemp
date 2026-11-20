@@ -11,8 +11,10 @@ import FaqSection from "@/components/home/FaqSection";
 import GalleryWall from "@/components/home/GalleryWall";
 import ScreenStory from "@/components/products/ScreenStory";
 import { faqs } from "@/data/site";
-import { categories } from "@/data/catalog";
+import { getPublicProductCategories } from "@/services/server/marketplace";
 import { pageMetadata } from "@/lib/seo";
+
+export const revalidate = 300; // Next.js ISR: revalidate product listing every 5 minutes
 
 export const metadata = pageMetadata({
   title: "Digital displays, standees and prices",
@@ -21,7 +23,12 @@ export const metadata = pageMetadata({
   path: "/screens",
 });
 
-export default function ScreensPage() {
+export default async function ScreensPage() {
+  const categories = await getPublicProductCategories();
+  const categoryNames = categories.length > 0
+    ? categories.map((c) => c.name || c.category_name)
+    : ["Digital Displays", "Standees", "Commercial Screens"];
+
   return (
     <>
       {/* No hero banner: the page leads straight into the listings. */}
@@ -30,7 +37,7 @@ export default function ScreensPage() {
         <div className="container">
           <h1 id="screens-title" className="visually-hidden">Illuvision digital displays and standees</h1>
           <Suspense fallback={null}>
-            <ProductBrowser />
+            <ProductBrowser initialCategories={categories} />
           </Suspense>
         </div>
       </section>
@@ -41,7 +48,7 @@ export default function ScreensPage() {
       <ScreenStory />
       <SizeVisualizer />
       <ScreenFinder />
-      <MarqueeRibbons panel hidden items={categories.map((c) => c.name)} />
+      <MarqueeRibbons panel hidden items={categoryNames} />
       <FaqSection items={faqs.general} />
     </>
   );

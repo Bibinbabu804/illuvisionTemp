@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
-import { getCategory, formatINR } from "@/data/catalog";
+import { formatINR } from "@/data/catalog";
 import { site } from "@/data/site";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./ProductCard.module.css";
@@ -17,7 +17,7 @@ export function priceLabel(product) {
 }
 
 export default function ProductCard({ product, section = "listing", priority = false, tall = false }) {
-  const category = getCategory(product.category) || (product.category_name ? { name: product.category_name, slug: product.category } : null);
+  const categoryName = product.category_name || product.category || null;
   const primary = product.images?.[0] || { src: `/images/products/${product.slug}.webp`, alt: product.name, pos: "50% 50%" };
   const secondary = product.images?.[1] || null;
   const useCasesList = Array.isArray(product.useCases) ? product.useCases : (Array.isArray(product.ideal_for) ? product.ideal_for : ["Shops", "Clinics"]);
@@ -73,7 +73,7 @@ export default function ProductCard({ product, section = "listing", priority = f
 
       <div className={styles.body}>
         <div className={styles.meta}>
-          <span>{category?.name}</span>
+          <span>{categoryName}</span>
           <span className={styles.sku}>{product.sku}</span>
         </div>
         <h3 className={styles.name}>

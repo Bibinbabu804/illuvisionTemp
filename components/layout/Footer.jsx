@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { site } from "@/data/site";
-import { categories } from "@/data/catalog";
+import { getPublicProductCategories } from "@/services/server/marketplace";
 import { EVENTS } from "@/lib/analytics";
 import { STOCK_CREDIT } from "@/data/media";
 import Icon from "@/components/ui/Icon";
@@ -27,7 +27,8 @@ function FLink({ href, children, external }) {
   );
 }
 
-export default function Footer() {
+export default async function Footer() {
+  const categories = await getPublicProductCategories();
   const { contact } = site;
   const contactItems = [
     contact.email && { label: contact.email, href: `mailto:${contact.email}` },

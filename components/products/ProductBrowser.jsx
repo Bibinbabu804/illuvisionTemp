@@ -5,12 +5,12 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import ProductCard from "./ProductCard";
 import Icon from "@/components/ui/Icon";
-import { categories as staticCategories } from "@/data/catalog";
 import { usePublicProducts } from "@/services/api/products/product.queries";
+import { usePublicCategories } from "@/services/api/categories/category.queries";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./ProductBrowser.module.css";
 
-export default function ProductBrowser() {
+export default function ProductBrowser({ initialCategories = [] }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -18,6 +18,8 @@ export default function ProductBrowser() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("recommended");
   const [size, setSize] = useState("any");
+
+  const { data: categories = initialCategories } = usePublicCategories({ initialData: initialCategories });
 
   // Query parameters formatted for the backend API
   const apiFilters = useMemo(() => {
@@ -53,7 +55,7 @@ export default function ProductBrowser() {
     if (slug === "all") next.delete("category");
     else next.set("category", slug);
     const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     track(EVENTS.SHOP_CTA, { section: "category-filter", category: slug });
   };
 
@@ -83,18 +85,21 @@ export default function ProductBrowser() {
             {active === "all" && <motion.span layoutId="chip-pill" className={styles.pill} transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
             <b>All</b> <span className="chip__count">{results.length}</span>
           </button>
-          {staticCategories.map((c) => (
-            <button
-              key={c.slug}
-              type="button"
-              className={`chip ${styles.chipAnim}`}
-              aria-pressed={active === c.slug}
-              onClick={() => setCategory(c.slug)}
-            >
-              {active === c.slug && <motion.span layoutId="chip-pill" className={styles.pill} transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-              <b>{c.name}</b> {counts[c.slug] !== undefined ? <span className="chip__count">{counts[c.slug]}</span> : null}
-            </button>
-          ))}
+          {categories.map((c) => {
+            const count = c.products_count !== undefined ? c.products_count : counts[c.slug];
+            return (
+              <button
+                key={c.slug || c.id}
+                type="button"
+                className={`chip ${styles.chipAnim}`}
+                aria-pressed={active === c.slug}
+                onClick={() => setCategory(c.slug)}
+              >
+                {active === c.slug && <motion.span layoutId="chip-pill" className={styles.pill} transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
+                <b>{c.name || c.category_name}</b> {count !== undefined ? <span className="chip__count">{count}</span> : null}
+              </button>
+            );
+          })}
         </div>
         <label className={styles.search}>
           <Icon name="zoom" size={18} />
