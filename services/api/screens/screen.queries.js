@@ -22,17 +22,19 @@ export function useScreens(filters = {}, options = {}) {
 }
 
 /**
- * Reusable hook to fetch public screen map inventory.
+ * Reusable hook to fetch public advertising screen map inventory
+ * from GET /api/v1/public/marketplace/screens/map.
  *
- * Stale time: 2 minutes.
- * Garbage collection time: 15 minutes.
+ * Stale time: 5 minutes.
+ * Garbage collection time: 30 minutes.
  */
 export function useMapScreens(filters = {}, options = {}) {
   return useQuery({
     queryKey: screenKeys.map(filters),
     queryFn: ({ signal }) => fetchMapScreens(filters, signal),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
     ...options,
   });
 }

@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
-import { screens as staticScreens, screenTypes, statuses, areas, cities, isSample, mapConfig } from "@/data/network";
-import { useScreens } from "@/services/api/screens/screen.queries";
+import { screenTypes, statuses, cities, mapConfig } from "@/data/network";
+import { extractDynamicAreas } from "@/lib/networkScreens";
 import { track, EVENTS } from "@/lib/analytics";
 import { savePlanner } from "@/lib/plannerStore";
 import "leaflet/dist/leaflet.css";
@@ -31,10 +31,16 @@ const distanceKm = (a, b) => {
 /**
  * Network map in the site's light theme: a white control panel (search,
  * filters, results) beside a warm light-gray map with small dot markers,
- * compact clusters and hover labels. Wheel zoom is off so page scrolling
- * never gets stuck; on touch, one finger scrolls and two fingers pan.
+ * compact clusters and hover labels. Powered exclusively by live Advertising
+ * Screen Management assets from /api/v1/public/marketplace/screens/map.
  */
-export default function NetworkMap({ enquiryHref = "#enquiry" }) {
+export default function NetworkMap({
+  enquiryHref = "#enquiry",
+  screens = [],
+  isLoading = false,
+  isError = false,
+  onRetry,
+}) {
   const mapEl = useRef(null);
   const mapRef = useRef(null);
   const LRef = useRef(null);
@@ -53,32 +59,7 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
   const [touchHint, setTouchHint] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
-  const { data: serverScreensData } = useScreens({ per_page: 50 });
-
-  const screens = useMemo(() => {
-    if (serverScreensData?.data && Array.isArray(serverScreensData.data) && serverScreensData.data.length > 0) {
-      const mapped = serverScreensData.data
-        .filter((s) => s.latitude && s.longitude)
-        .map((s) => ({
-          id: String(s.screen_code || s.id),
-          name: s.location_name || s.name,
-          venue: s.name,
-          area: s.city?.name || "Kerala",
-          type: s.screen_type?.toLowerCase().includes("led")
-            ? "led"
-            : s.screen_type?.toLowerCase().includes("outdoor")
-            ? "outdoor"
-            : s.screen_type?.toLowerCase().includes("standee")
-            ? "standee"
-            : "indoor",
-          status: s.booking_status === "available" ? "available" : "enquiry",
-          lat: Number(s.latitude),
-          lng: Number(s.longitude),
-        }));
-      if (mapped.length > 0) return mapped;
-    }
-    return staticScreens;
-  }, [serverScreensData]);
+  const dynamicAreas = useMemo(() => extractDynamicAreas(screens), [screens]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -86,7 +67,7 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
       (s) =>
         (types.length === 0 || types.includes(s.type)) &&
         (area === "all" || s.area === area) &&
-        (!q || `${s.name} ${s.area} ${typeLabel[s.type]}`.toLowerCase().includes(q))
+        (!q || `${s.name} ${s.venue} ${s.area} ${s.rawType || ""} ${typeLabel[s.type] || ""}`.toLowerCase().includes(q))
     );
     if (!userPos) return list;
     return list.map((s) => ({ ...s, km: distanceKm(userPos, s) })).sort((a, b) => a.km - b.km);
@@ -196,7 +177,7 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
       });
       m.on("click", () => {
         setSelected(s.id);
-        track(EVENTS.MAP_MARKER, { section: "map", screen: s.id, sample: isSample });
+        track(EVENTS.MAP_MARKER, { section: "map", screen: s.id, sample: false });
       });
       markersRef.current[s.id] = m;
       return m;
@@ -225,7 +206,7 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
 
   const focusScreen = (s) => {
     setSelected(s.id);
-    track(EVENTS.SCREEN_DETAIL, { section: "map-list", screen: s.id, sample: isSample });
+    track(EVENTS.SCREEN_DETAIL, { section: "map-list", screen: s.id, sample: false });
     const m = markersRef.current[s.id];
     if (m && clusterRef.current) {
       clusterRef.current.zoomToShowLayer(m, () => {
@@ -286,13 +267,18 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
           <div>
             <p className={styles.panelKicker}>Screen network</p>
             <p className={styles.panelCount}>
-              <motion.span key={results.length} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, ease }}>
-                {results.length}
-              </motion.span>{" "}
-              {isSample ? "sample screens" : "screens"}
+              {isLoading && screens.length === 0 ? (
+                <span>Loading screens…</span>
+              ) : (
+                <>
+                  <motion.span key={results.length} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, ease }}>
+                    {results.length.toLocaleString("en-IN")}
+                  </motion.span>{" "}
+                  {results.length === 1 ? "screen" : "screens"}
+                </>
+              )}
             </p>
           </div>
-          {isSample && <span className="badge badge--sample">Sample data</span>}
         </div>
 
         <label className={styles.search}>
@@ -331,7 +317,7 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
             }}
           >
             <option value="all">All cities</option>
-            {areas.map((a) => (
+            {dynamicAreas.map((a) => (
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
@@ -364,7 +350,27 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
               </motion.li>
             ))}
           </AnimatePresence>
-          {results.length === 0 && (
+          {isLoading && screens.length === 0 && (
+            <li className={styles.empty} role="status">
+              Loading live advertising screens…
+            </li>
+          )}
+          {!isLoading && isError && screens.length === 0 && (
+            <li className={styles.empty} role="alert">
+              Could not load live screen locations.{" "}
+              {onRetry && (
+                <button type="button" onClick={() => onRetry()}>
+                  Try again
+                </button>
+              )}
+            </li>
+          )}
+          {!isLoading && !isError && screens.length === 0 && (
+            <li className={styles.empty} role="status">
+              No advertising screens with valid locations are currently available.
+            </li>
+          )}
+          {!isLoading && !isError && screens.length > 0 && results.length === 0 && (
             <li className={styles.empty}>
               No screens match.{" "}
               <button type="button" onClick={() => { setTypes([]); setArea("all"); setQuery(""); }}>Clear filters</button>
@@ -382,8 +388,8 @@ export default function NetworkMap({ enquiryHref = "#enquiry" }) {
 
       {/* ---------- map ---------- */}
       <div className={styles.mapWrap}>
-        <div ref={mapEl} className={styles.map} aria-label="Map of sample screen locations" role="region" />
-        {!ready && <div className={styles.loading} aria-hidden="true" />}
+        <div ref={mapEl} className={styles.map} aria-label="Map of advertising screen locations" role="region" />
+        {(!ready || (isLoading && screens.length === 0)) && <div className={styles.loading} aria-hidden="true" />}
 
         <div className={styles.legend} aria-hidden="true">
           {screenTypes.map((t) => (
