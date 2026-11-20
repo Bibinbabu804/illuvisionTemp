@@ -20,7 +20,7 @@ export const site = {
     // Both numbers are printed on the customer brochure and price list.
     phone: "+91 884 845 9136",
     phone2: "+91 6282 825 277",
-    whatsapp: null,
+    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "+91 884 845 9136",
     address: null,
     hours: null,
   },
