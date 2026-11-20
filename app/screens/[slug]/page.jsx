@@ -4,6 +4,7 @@ import Reveal from "@/components/ui/Reveal";
 import Accordion from "@/components/ui/Accordion";
 import ProductGallery from "@/components/products/ProductGallery";
 import PurchasePanel from "@/components/products/PurchasePanel";
+import KeySpecifications from "@/components/products/KeySpecifications";
 import ProductCard from "@/components/products/ProductCard";
 import PriceTable from "@/components/products/PriceTable";
 import Icon from "@/components/ui/Icon";
@@ -175,24 +176,11 @@ export default async function ProductPage({ params }) {
         </div>
       </section>
 
-      {keySpecs.length > 0 && (
-        <section className={styles.specs} aria-labelledby="key-specs">
-          <div className="container">
-            <h2 id="key-specs" className={styles.h2}>Key specifications</h2>
-            <ul className={styles.keySpecs}>
-              {keySpecs.map((spec, i) => (
-                <Reveal as="li" key={`${spec.name}-${i}`} delay={i * 70}>
-                  <span>{spec.name}</span>
-                  <strong>
-                    {spec.value}
-                    {spec.unit ? ` ${spec.unit}` : ""}
-                  </strong>
-                </Reveal>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+      <KeySpecifications
+        specifications={specifications}
+        variants={product.variants || []}
+        productSlug={product.slug}
+      />
 
       {site.features.publicPricing && product.variants?.length > 0 && (
         <section className={styles.prices} id="prices" aria-labelledby="prices-title">

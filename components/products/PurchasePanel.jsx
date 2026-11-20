@@ -207,7 +207,10 @@ export default function PurchasePanel({ product, categoryName }) {
               const i = Number(e.target.value);
               setVariantIndex(i);
               const v = variants[i];
-              if (v) window.history.replaceState(null, "", `?size=${v.size}&display=${encodeURIComponent(v.display)}`);
+              if (v) {
+                window.history.replaceState(null, "", `?size=${v.size}&display=${encodeURIComponent(v.display)}`);
+                window.dispatchEvent(new CustomEvent(SELECT_VARIANT_EVENT, { detail: { size: v.size, display: v.display } }));
+              }
             }}
           >
             <option value={-1}>Choose a size and display</option>
