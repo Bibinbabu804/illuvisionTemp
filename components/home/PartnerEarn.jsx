@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import { partnerSteps, pricing } from "@/data/catalog";
 import { site } from "@/data/site";
+import { buildBusinessWhatsAppUrl } from "@/lib/whatsapp";
 import { EVENTS } from "@/lib/analytics";
 import styles from "./PartnerEarn.module.css";
 
@@ -13,6 +14,9 @@ const tel = (n) => `tel:${n.replace(/\s/g, "")}`;
 export default function PartnerEarn() {
   if (!site.features.networkParticipation) return null;
   const { phone, phone2 } = site.contact;
+  const partnerWa = buildBusinessWhatsAppUrl(
+    "Hello Illuvision team, I would like to enquire about becoming a Founding Partner."
+  );
 
   return (
     <section className={`section section--dark ${styles.section}`} id="earn" aria-labelledby="earn-title">
@@ -30,11 +34,19 @@ export default function PartnerEarn() {
             <Button href="/contact?topic=network" variant="accent" event={EVENTS.SHOP_CTA} eventProps={{ section: "partner-earn" }}>
               Become a Founding Partner
             </Button>
-            {(phone || phone2) && (
+            {(phone || phone2 || partnerWa.ok) && (
               <p className={styles.phones}>
                 {phone && <a href={tel(phone)}>{phone}</a>}
                 {phone && phone2 && <span aria-hidden="true"> / </span>}
                 {phone2 && <a href={tel(phone2)}>{phone2}</a>}
+                {partnerWa.ok && (
+                  <>
+                    {(phone || phone2) && <span aria-hidden="true"> · </span>}
+                    <a href={partnerWa.url} target="_blank" rel="noopener noreferrer">
+                      WhatsApp
+                    </a>
+                  </>
+                )}
               </p>
             )}
           </Reveal>

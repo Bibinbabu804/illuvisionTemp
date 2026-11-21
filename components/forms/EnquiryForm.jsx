@@ -77,6 +77,28 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
   const [result, setResult] = useState(null);
   const [fromPlanner, setFromPlanner] = useState(false);
 
+  // Contact: honour ?topic= query param (e.g. /contact?topic=network or /contact?topic=visit)
+  useEffect(() => {
+    if (variant !== "contact" || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const topicParam = (params.get("topic") || "").toLowerCase();
+    if (topicParam === "network" || topicParam === "partner" || topicParam === "partnership") {
+      setValues((v) => ({
+        ...v,
+        topic: "Partnership",
+        message: v.message || "I would like to become an Illuvision Founding Partner.",
+      }));
+    } else if (topicParam === "visit") {
+      setValues((v) => ({
+        ...v,
+        topic: "Buying screens",
+        message: v.message || "I would like to book a free shop visit.",
+      }));
+    } else if (topicParam === "advertising") {
+      setValues((v) => ({ ...v, topic: "Advertising" }));
+    }
+  }, [variant]);
+
   // Advertising: preserve planner selections (restored + live updates).
   useEffect(() => {
     if (variant !== "advertising") return;

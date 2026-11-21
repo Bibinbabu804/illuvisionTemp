@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import PriceTable from "./PriceTable";
 import { pricing, formatINR } from "@/data/catalog";
 import { site } from "@/data/site";
+import { buildBusinessWhatsAppUrl } from "@/lib/whatsapp";
 import { EVENTS } from "@/lib/analytics";
 import styles from "./PriceList.module.css";
 
@@ -18,6 +19,9 @@ const tel = (n) => `tel:${n.replace(/\s/g, "")}`;
 export default function PriceList({ pricingData }) {
   if (!site.features.publicPricing) return null;
   const { phone, phone2 } = site.contact;
+  const visitWa = buildBusinessWhatsAppUrl(
+    "Hello Illuvision team, I would like to book a free shop visit to discuss digital display options."
+  );
   const products = pricingData?.products || [];
   const isUnavailable = Boolean(pricingData?.unavailable);
   const year = pricingData?.year || 2026;
@@ -123,9 +127,17 @@ export default function PriceList({ pricingData }) {
               {phone && <a href={tel(phone)}>{phone}</a>}
               {phone && phone2 && <span aria-hidden="true"> | </span>}
               {phone2 && <a href={tel(phone2)}>{phone2}</a>}
+              {visitWa.ok && (
+                <>
+                  {(phone || phone2) && <span aria-hidden="true"> | </span>}
+                  <a href={visitWa.url} target="_blank" rel="noopener noreferrer">
+                    WhatsApp
+                  </a>
+                </>
+              )}
             </p>
           </div>
-          <Button href="/contact" variant="accent" event={EVENTS.SHOP_CTA} eventProps={{ section: "price-list" }}>
+          <Button href="/contact?topic=visit" variant="accent" event={EVENTS.SHOP_CTA} eventProps={{ section: "price-list" }}>
             Book a free shop visit
           </Button>
         </Reveal>
