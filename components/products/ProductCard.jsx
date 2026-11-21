@@ -23,7 +23,12 @@ export default function ProductCard({ product, section = "listing", priority = f
   const useCasesList = Array.isArray(product.useCases) ? product.useCases : (Array.isArray(product.ideal_for) ? product.ideal_for : ["Shops", "Clinics"]);
   const onClick = () =>
     track(section === "featured" ? EVENTS.FEATURED_PRODUCT : EVENTS.SCREEN_DETAIL, {
+      elementId: section === "featured" ? "featured_product_card" : "listing_product_card",
+      elementLabel: product.name,
+      entityType: "product",
+      entityId: product.id,
       sku: product.sku,
+      slug: product.slug,
       section,
     });
 

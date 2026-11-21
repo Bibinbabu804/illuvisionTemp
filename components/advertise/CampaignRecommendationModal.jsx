@@ -11,7 +11,7 @@ import {
   generateCampaignRecommendations,
   createCampaignProposal,
 } from "@/services/api/planner/planner.api";
-import { track, EVENTS } from "@/lib/analytics";
+import { track, trackEvent, trackWhatsAppClick, EVENTS } from "@/lib/analytics";
 import styles from "./CampaignRecommendationModal.module.css";
 
 function formatMoney(amount, symbol = "₹", decimals = 0, locale = "en-IN") {
@@ -91,11 +91,13 @@ export default function CampaignRecommendationModal({
         const data = await generateCampaignRecommendations(payload, signal);
         if (signal?.aborted) return;
         setResult(data);
-        track(EVENTS.PLANNER_SUBMIT, {
-          section: "campaign-recommendation-modal",
-          currency: payload.currency,
-          city_count: selectedCityIds.length,
-          package_count: data?.packages?.length || 0,
+        trackEvent(EVENTS.CAMPAIGN_RECOMMENDATIONS_VIEW, {
+          metadata: {
+            section: "campaign-recommendation-modal",
+            currency: payload.currency,
+            city_count: selectedCityIds.length,
+            package_count: data?.packages?.length || 0,
+          },
         });
       } catch (err) {
         if (signal?.aborted) return;
@@ -150,10 +152,24 @@ export default function CampaignRecommendationModal({
       };
       setProposalResult(bundle);
 
-      track(EVENTS.AD_ENQUIRY, {
-        section: "campaign-proposal-whatsapp",
-        package_key: pkg.key,
-        currency: pkg.pricing?.currency,
+      trackEvent(EVENTS.CAMPAIGN_PROPOSAL_GENERATED, {
+        entityType: "proposal",
+        metadata: {
+          section: "campaign-recommendation-modal",
+          package_key: pkg.key,
+          currency: pkg.pricing?.currency,
+          reference_code: created.reference_code,
+        },
+      });
+      trackWhatsAppClick({
+        elementId: "campaign_enquire_now",
+        elementLabel: `Enquire Now (${pkg.name})`,
+        entityType: "campaign",
+        metadata: {
+          section: "campaign-recommendation-modal",
+          package_key: pkg.key,
+          reference_code: created.reference_code,
+        },
       });
 
       if (wa.ok && wa.url) {

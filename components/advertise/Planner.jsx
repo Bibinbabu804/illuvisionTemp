@@ -244,6 +244,14 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
       city_ids: selectedCityIds,
       screens: readPlanner()?.screens,
     });
+    track(EVENTS.CAMPAIGN_PLAN_START, {
+      elementId: "planner_plan_campaign",
+      elementLabel: "Plan Campaign",
+      section: "planner",
+      currency: state.currency,
+      duration: state.duration,
+      city_count: selectedCityIds.length,
+    });
     setModalOpen(true);
   };
 

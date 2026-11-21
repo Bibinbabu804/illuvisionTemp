@@ -7,7 +7,7 @@ import { priceLabel } from "./ProductCard";
 import { SELECT_VARIANT_EVENT } from "./PriceTable";
 import { formatINR } from "@/data/catalog";
 import { site } from "@/data/site";
-import { track, EVENTS } from "@/lib/analytics";
+import { track, trackProductView, trackWhatsAppClick, EVENTS } from "@/lib/analytics";
 import { buildWhatsAppUrl, normalizeWhatsAppNumber } from "@/lib/whatsapp";
 import { requestProductCode } from "@/services/api/products/requestCode.api";
 import styles from "./PurchasePanel.module.css";
@@ -85,6 +85,16 @@ export default function PurchasePanel({ product, categoryName }) {
     };
   }, []);
 
+  // Track Marketplace product detail view on mount
+  useEffect(() => {
+    if (!product?.id) return;
+    trackProductView({
+      productId: product.id,
+      slug: product.slug,
+      category: product.category_name || product.category || undefined,
+    });
+  }, [product?.id, product?.slug, product?.category_name, product?.category]);
+
   const handleRequestCode = async (source) => {
     if (inFlightRef.current || isRequesting) return;
     setRequestError("");
@@ -139,11 +149,16 @@ export default function PurchasePanel({ product, categoryName }) {
         whatsappUrl: wa.url,
       });
 
-      track(EVENTS.SHOP_CTA, {
-        section: source,
-        sku: product.sku,
-        cta: "request-code-whatsapp",
-        request_code: result.request_code,
+      trackWhatsAppClick({
+        elementId: "product_whatsapp_inquiry",
+        elementLabel: "Request Code on WhatsApp",
+        entityType: "product",
+        entityId: product.id,
+        metadata: {
+          section: source,
+          sku: product.sku,
+          reference_code: result.request_code,
+        },
       });
 
       const popup = window.open(wa.url, "_blank", "noopener,noreferrer");

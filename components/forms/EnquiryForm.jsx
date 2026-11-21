@@ -15,7 +15,7 @@ import { readPlanner, onPlannerChange } from "@/lib/plannerStore";
 import { currencies, durations, objectives } from "@/data/planner";
 import { screenTypes } from "@/data/network";
 import { site } from "@/data/site";
-import { track, EVENTS } from "@/lib/analytics";
+import { track, trackWhatsAppClick, EVENTS } from "@/lib/analytics";
 import styles from "./EnquiryForm.module.css";
 
 /**
@@ -205,6 +205,13 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
       setStatus("done");
 
       if (wa.ok && wa.url && typeof window !== "undefined") {
+        trackWhatsAppClick({
+          elementId: `${variant}_form_whatsapp`,
+          elementLabel: variant === "advertising" ? "Send campaign enquiry" : variant === "product" ? "Request quote" : "Send message",
+          entityType: variant === "product" ? "product" : "enquiry",
+          entityId: product?.id,
+          metadata: { section: "enquiry-form", inquiry_type: variant },
+        });
         window.open(wa.url, "_blank", "noopener,noreferrer");
       }
 

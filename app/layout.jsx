@@ -9,6 +9,7 @@ import SmoothScroll from "@/components/motion/SmoothScroll";
 import Cursor from "@/components/motion/Cursor";
 import ScrollProgress from "@/components/motion/ScrollProgress";
 import QueryProvider from "@/components/providers/QueryProvider";
+import AnalyticsProvider from "@/components/providers/AnalyticsProvider";
 import { site } from "@/data/site";
 import { JsonLd, organizationSchema } from "@/lib/seo";
 import logo from "@/assets/images/logo.png";
@@ -61,6 +62,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <QueryProvider>
+          <AnalyticsProvider />
           <a href="#main" className="skip-link">Skip to content</a>
           <div id="top-sentinel" aria-hidden="true" style={{ position: "absolute", top: 0, height: 24, width: 1 }} />
           <SmoothScroll />
