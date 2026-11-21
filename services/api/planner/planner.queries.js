@@ -6,6 +6,7 @@ import {
   fetchCurrencyContext,
   fetchSupportedCurrencies,
   searchLocations,
+  fetchNearbyLocations,
   fetchCampaignScreenTypes,
 } from "./planner.api";
 
@@ -45,12 +46,28 @@ export function useLocationSearch(query = "", { enabled = true, limit = 20 } = {
   });
 }
 
-export function useCampaignScreenTypes(options = {}) {
+export function useNearbyLocations(
+  { cityId = null, lat = null, lng = null, excludeIds = [], limit = 8, enabled = true } = {}
+) {
   return useQuery({
-    queryKey: plannerKeys.screenTypes(),
-    queryFn: ({ signal }) => fetchCampaignScreenTypes(signal),
+    queryKey: plannerKeys.nearbyLocations({ cityId, lat, lng, excludeIds }),
+    queryFn: ({ signal }) => fetchNearbyLocations({ cityId, lat, lng, excludeIds, limit }, signal),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    placeholderData: (prev) => prev,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useCampaignScreenTypes(cityIds = [], options = {}) {
+  return useQuery({
+    queryKey: plannerKeys.screenTypes(cityIds),
+    queryFn: ({ signal }) => fetchCampaignScreenTypes(cityIds, signal),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
     retry: 1,
     ...options,
   });

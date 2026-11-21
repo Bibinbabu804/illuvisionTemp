@@ -26,7 +26,9 @@ const initial = {
   duration: "1m",
   area: "any",
   location: null,
+  locations: [],
   types: [],
+  typeLabels: {},
   objective: "awareness",
   startDate: "",
 };
@@ -68,18 +70,29 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
   const id = useId();
   const [state, setState] = useState(initial);
   const [budgetError, setBudgetError] = useState("");
+  const [prunedNotice, setPrunedNotice] = useState("");
   const manualCurrencyRef = useRef(null);
   const savedCurrencyRef = useRef(null);
   const sectionRefs = useRef([]);
   const lastAdvanceRef = useRef(0);
+
+  const selectedCityIds = useMemo(
+    () =>
+      (state.locations || [])
+        .map((loc) => Number(loc.city_id ?? loc.id))
+        .filter((n) => n > 0),
+    [state.locations]
+  );
 
   const { data: currencyContext } = useCurrencyContext();
   const { data: backendCurrencies } = useSupportedCurrencies();
   const {
     data: screenTypesData,
     isLoading: screenTypesLoading,
+    isFetching: screenTypesFetching,
+    isPlaceholderData: screenTypesPlaceholder,
     isError: screenTypesError,
-  } = useCampaignScreenTypes();
+  } = useCampaignScreenTypes(selectedCityIds);
 
   const availableCurrencies = useMemo(() => {
     const list = Array.isArray(backendCurrencies) && backendCurrencies.length > 0
@@ -117,7 +130,16 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
       if (saved.currency) {
         savedCurrencyRef.current = saved.currency;
       }
-      setState((s) => ({ ...s, ...pick(saved) }));
+      const picked = pick(saved);
+      // Migrate legacy single-location selection into multi-location array
+      if (
+        (!Array.isArray(picked.locations) || picked.locations.length === 0) &&
+        picked.location &&
+        (picked.location.city_id || picked.location.type === "city")
+      ) {
+        picked.locations = [picked.location];
+      }
+      setState((s) => ({ ...s, ...picked }));
     }
   }, []);
 
@@ -132,6 +154,24 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
     });
     setState((s) => (s.currency === nextCurrency ? s : { ...s, currency: nextCurrency }));
   }, [currencyContext]);
+
+  // 3. Reconcile selected screen types whenever location-filtered options update
+  useEffect(() => {
+    if (!screenTypesData || screenTypesPlaceholder) return;
+    const validIds = new Set((screenTypesData.types || []).map((t) => t.id));
+    setState((prev) => {
+      if (!prev.types.length) return prev;
+      const kept = prev.types.filter((t) => validIds.has(t));
+      if (kept.length === prev.types.length) return prev;
+      const removedCount = prev.types.length - kept.length;
+      setPrunedNotice(
+        `${removedCount} screen ${removedCount === 1 ? "format was" : "formats were"} removed because ${removedCount === 1 ? "it is" : "they are"} not available in the selected ${prev.locations.length === 1 ? "city" : "cities"}.`
+      );
+      const next = { ...prev, types: kept };
+      savePlanner(next);
+      return next;
+    });
+  }, [screenTypesData, screenTypesPlaceholder]);
 
   const update = (patch, field) => {
     setState((s) => {
@@ -197,12 +237,17 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
 
   const proceed = () => {
     if (budgetError) return;
-    savePlanner({ ...state, screens: readPlanner()?.screens });
+    savePlanner({
+      ...state,
+      city_ids: selectedCityIds,
+      screens: readPlanner()?.screens,
+    });
     track(EVENTS.PLANNER_SUBMIT, {
       section: "planner",
       currency: state.currency,
       duration: state.duration,
       area: state.area,
+      city_count: selectedCityIds.length,
       types: state.types.join(","),
     });
     if (inPage) {
@@ -213,11 +258,43 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
     }
   };
 
-  const selectedAreaDisplay = state.location?.label
-    ? `${state.location.label}${state.location.parent_label ? `, ${state.location.parent_label}` : ""}`
-    : state.area === "any" || !state.area
-      ? "Any / to be advised"
-      : state.area;
+  const syncLocations = (nextLocations) => {
+    setPrunedNotice("");
+    const names = nextLocations.map((l) => l.name || l.label).filter(Boolean);
+    update(
+      {
+        locations: nextLocations,
+        location: nextLocations[0] || null,
+        area: names.length > 0 ? names.join(", ") : "any",
+      },
+      "area"
+    );
+  };
+
+  const handleAddLocation = (loc) => {
+    const canonicalId = String(loc.city_id ?? loc.id);
+    if (state.locations.some((x) => String(x.city_id ?? x.id) === canonicalId)) {
+      return;
+    }
+    syncLocations([...state.locations, loc]);
+  };
+
+  const handleRemoveLocation = (canonicalId) => {
+    syncLocations(
+      state.locations.filter((x) => String(x.city_id ?? x.id) !== String(canonicalId))
+    );
+  };
+
+  const handleClearAllLocations = () => {
+    syncLocations([]);
+  };
+
+  const selectedAreaDisplay =
+    state.locations.length > 0
+      ? state.locations.map((l) => l.name || l.label).filter(Boolean).join(", ")
+      : state.area === "any" || !state.area
+        ? "Any / to be advised"
+        : state.area;
 
   return (
     <section className={`section ${lead ? "section--lead" : ""} ${styles.section}`} id="planner" aria-labelledby={`${id}-title`}>
@@ -360,43 +437,51 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                 <span>03</span> Location &amp; screens
               </legend>
               <div className="field">
-                <label htmlFor={`${id}-area`}>Preferred area <span className="muted">(optional)</span></label>
+                <label htmlFor={`${id}-area`}>
+                  Preferred cities <span className="muted">(optional — select one or more)</span>
+                </label>
                 <LocationSearchSelect
                   id={`${id}-area`}
-                  value={state.location}
-                  areaLabel={state.area}
-                  onSelect={(loc) =>
-                    update(
-                      {
-                        area: loc.label,
-                        location: loc,
-                      },
-                      "area"
-                    )
-                  }
-                  onClear={() =>
-                    update(
-                      {
-                        area: "any",
-                        location: null,
-                      },
-                      "area"
-                    )
-                  }
+                  selectedLocations={state.locations}
+                  onAdd={handleAddLocation}
+                  onRemove={handleRemoveLocation}
+                  onClearAll={handleClearAllLocations}
                 />
               </div>
 
-              <p className={styles.subLabel}>Screen types <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></p>
-              {screenTypesLoading ? (
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <p className={styles.subLabel}>
+                  Screen types <span className="muted" style={{ fontWeight: 400 }}>(optional)</span>
+                </p>
+                {selectedCityIds.length > 0 && (
+                  <span className="muted" style={{ fontSize: "0.78rem" }}>
+                    {screenTypesFetching
+                      ? "Updating formats for selected cities…"
+                      : `Available in ${state.locations.map((l) => l.name || l.label).join(", ")}`}
+                  </span>
+                )}
+              </div>
+              {prunedNotice && (
+                <p className="muted" role="status" style={{ fontSize: "0.8rem", marginBottom: 8 }}>
+                  {prunedNotice}
+                </p>
+              )}
+              {screenTypesLoading && !screenTypesData ? (
                 <p className="muted" role="status" style={{ fontSize: "0.875rem" }}>
                   Loading available advertising screen formats…
                 </p>
-              ) : screenTypesError || screenTypeGroups.length === 0 ? (
+              ) : screenTypesError ? (
                 <p className="muted" role="status" style={{ fontSize: "0.875rem" }}>
                   Screen format options are temporarily unavailable. You can still continue and our team will recommend suitable screens.
                 </p>
+              ) : screenTypeGroups.length === 0 ? (
+                <p className="muted" role="status" style={{ fontSize: "0.875rem" }}>
+                  {selectedCityIds.length > 0
+                    ? "No active screen formats are currently listed for the selected city. You can add nearby cities or continue and our team will recommend suitable screens."
+                    : "Screen format options are temporarily unavailable. You can still continue and our team will recommend suitable screens."}
+                </p>
               ) : (
-                <div style={{ display: "grid", gap: 14 }}>
+                <div style={{ display: "grid", gap: 14, opacity: screenTypesFetching && screenTypesPlaceholder ? 0.72 : 1, transition: "opacity 150ms ease" }}>
                   {screenTypeGroups.map((group) => (
                     <div key={group.id}>
                       <p className="muted" style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
@@ -408,16 +493,19 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                             <input
                               type="checkbox"
                               checked={state.types.includes(t.id)}
-                              onChange={() =>
+                              onChange={() => {
+                                setPrunedNotice("");
+                                const nextTypes = state.types.includes(t.id)
+                                  ? state.types.filter((x) => x !== t.id)
+                                  : [...state.types, t.id];
                                 update(
                                   {
-                                    types: state.types.includes(t.id)
-                                      ? state.types.filter((x) => x !== t.id)
-                                      : [...state.types, t.id],
+                                    types: nextTypes,
+                                    typeLabels: { ...state.typeLabels, ...typeLabelMap },
                                   },
                                   "types"
-                                )
-                              }
+                                );
+                              }}
                             />
                             <span>{t.label}</span>
                           </label>
@@ -480,7 +568,7 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                 <dt>Screens</dt>
                 <dd>
                   {state.types.length
-                    ? state.types.map((t) => typeLabelMap[t] || t).join(", ")
+                    ? state.types.map((t) => typeLabelMap[t] || state.typeLabels?.[t] || t).join(", ")
                     : "Any advertising format"}
                 </dd>
               </div>

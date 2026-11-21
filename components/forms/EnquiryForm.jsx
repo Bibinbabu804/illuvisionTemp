@@ -39,8 +39,15 @@ function briefFromPlanner(p) {
   const lines = [];
   const dur = durations.find((d) => d.id === p.duration)?.label;
   const obj = objectives.find((o) => o.id === p.objective)?.label;
-  const types = (p.types || []).map((t) => screenTypes.find((s) => s.id === t)?.label).filter(Boolean);
-  if (p.area && p.area !== "any") lines.push(`Preferred area: ${p.area}`);
+  const types = (p.types || [])
+    .map((t) => p.typeLabels?.[t] || screenTypes.find((s) => s.id === t)?.label || t)
+    .filter(Boolean);
+  const locationNames = Array.isArray(p.locations) && p.locations.length > 0
+    ? p.locations.map((l) => l.name || l.label).filter(Boolean).join(", ")
+    : p.area && p.area !== "any"
+      ? p.area
+      : "";
+  if (locationNames) lines.push(`Preferred cities: ${locationNames}`);
   if (types.length) lines.push(`Screen types: ${types.join(", ")}`);
   if (p.screens?.length) lines.push(`Screens of interest: ${p.screens.join(", ")}`);
   if (obj) lines.push(`Objective: ${obj}`);
