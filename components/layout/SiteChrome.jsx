@@ -1,13 +1,15 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import LogoIntro from "@/components/layout/LogoIntro";
 
 const CHROMELESS_PREFIXES = ["/proposals"];
 
-export default function SiteChrome({ children }) {
+/**
+ * Client wrapper that toggles site chrome (intro, header, footer) on chromeless
+ * routes like /proposals/[token]. Receives header/footer/intro as ReactNode props
+ * from RootLayout so async Server Components like Footer stay on the server.
+ */
+export default function SiteChrome({ intro, header, footer, children }) {
   const pathname = usePathname() || "";
   const isChromeless = CHROMELESS_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
@@ -19,10 +21,10 @@ export default function SiteChrome({ children }) {
 
   return (
     <>
-      <LogoIntro />
-      <Header />
+      {intro}
+      {header}
       <main id="main">{children}</main>
-      <Footer />
+      {footer}
     </>
   );
 }

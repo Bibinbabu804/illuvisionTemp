@@ -1,6 +1,9 @@
 // Global design system first, so component CSS modules can override it.
 import "./globals.css";
 import { Urbanist } from "next/font/google";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import LogoIntro from "@/components/layout/LogoIntro";
 import SiteChrome from "@/components/layout/SiteChrome";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import Cursor from "@/components/motion/Cursor";
@@ -64,7 +67,9 @@ export default function RootLayout({ children }) {
           <Cursor />
           <ScrollProgress />
           <div className="gridlines" aria-hidden="true"><span /><span /><span /><span /><span /></div>
-          <SiteChrome>{children}</SiteChrome>
+          <SiteChrome intro={<LogoIntro />} header={<Header />} footer={<Footer />}>
+            {children}
+          </SiteChrome>
         </QueryProvider>
         <JsonLd data={organizationSchema(logo.src)} />
       </body>
