@@ -1,5 +1,5 @@
 .page {
-  padding: clamp(96px, 11vw, 136px) 0 80px;
+  padding: clamp(28px, 4vw, 48px) 0 64px;
 }
 
 .shell {

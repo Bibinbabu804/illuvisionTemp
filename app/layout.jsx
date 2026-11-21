@@ -1,9 +1,7 @@
 // Global design system first, so component CSS modules can override it.
 import "./globals.css";
 import { Urbanist } from "next/font/google";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import LogoIntro from "@/components/layout/LogoIntro";
+import SiteChrome from "@/components/layout/SiteChrome";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import Cursor from "@/components/motion/Cursor";
 import ScrollProgress from "@/components/motion/ScrollProgress";
@@ -62,14 +60,11 @@ export default function RootLayout({ children }) {
         <QueryProvider>
           <a href="#main" className="skip-link">Skip to content</a>
           <div id="top-sentinel" aria-hidden="true" style={{ position: "absolute", top: 0, height: 24, width: 1 }} />
-          <LogoIntro />
           <SmoothScroll />
           <Cursor />
           <ScrollProgress />
           <div className="gridlines" aria-hidden="true"><span /><span /><span /><span /><span /></div>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
+          <SiteChrome>{children}</SiteChrome>
         </QueryProvider>
         <JsonLd data={organizationSchema(logo.src)} />
       </body>
