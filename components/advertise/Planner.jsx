@@ -6,69 +6,197 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
-import { currencies, durations, objectives, budgetSlider, plannerRules } from "@/data/planner";
-import { areas, screens, screenTypes, isSample } from "@/data/network";
+import LocationSearchSelect from "./LocationSearchSelect";
+import { currencies as fallbackCurrencies, durations, objectives, budgetSlider, plannerRules } from "@/data/planner";
 import { readPlanner, savePlanner } from "@/lib/plannerStore";
+import {
+  useCurrencyContext,
+  useSupportedCurrencies,
+  useCampaignScreenTypes,
+} from "@/services/api/planner/planner.queries";
 import { track, EVENTS } from "@/lib/analytics";
 import { smoothScrollTo } from "@/components/motion/SmoothScroll";
 import styles from "./Planner.module.css";
 
+const DEFAULT_CURRENCY = "INR";
+
 const initial = {
-  budget: budgetSlider.initial,
-  currency: "USD",
+  budget: "",
+  currency: DEFAULT_CURRENCY,
   duration: "1m",
   area: "any",
+  location: null,
   types: [],
   objective: "awareness",
   startDate: "",
 };
 
-export function formatBudget(budget, currency) {
-  const c = currencies.find((x) => x.code === currency);
-  return `${c?.symbol ?? ""}${Number(budget || 0).toLocaleString("en")}`;
+export function formatBudget(budget, currency, currencyList = fallbackCurrencies) {
+  const c = currencyList.find((x) => x.code === currency) || fallbackCurrencies.find((x) => x.code === currency);
+  const symbol = c?.symbol ?? `${currency} `;
+  return `${symbol}${Number(budget || 0).toLocaleString(c?.locale || "en")}`;
 }
 
 /**
- * Budget-first planner. With no approved rate rules (`plannerRules` is
- * null) it prepares an enquiry brief and never estimates reach, spend
- * allocation or availability.
+ * Resolve effective currency respecting strict priority:
+ * 1. Manual user override
+ * 2. Saved session currency
+ * 3. IP-detected currency
+ * 4. Application fallback
+ */
+export function resolvePreferredCurrency({
+  manualCurrency,
+  savedCurrency,
+  detectedCurrency,
+  fallback = DEFAULT_CURRENCY,
+}) {
+  if (manualCurrency) return manualCurrency;
+  if (savedCurrency) return savedCurrency;
+  if (detectedCurrency) return detectedCurrency;
+  return fallback;
+}
+
+/**
+ * Budget-first Campaign Planner with:
+ * 1. IP-based currency detection & optional budget input
+ * 2. Keyboard Enter + Next section progression
+ * 3. Dynamic hierarchical Location search
+ * 4. Dynamic Advertising Screen types (Fixed + Mobile/Transit)
  */
 export default function Planner({ inPage = false, index, headingAs = "h2", lead = false }) {
   const router = useRouter();
   const id = useId();
   const [state, setState] = useState(initial);
-  const hydrated = useRef(false);
+  const [budgetError, setBudgetError] = useState("");
+  const manualCurrencyRef = useRef(null);
+  const savedCurrencyRef = useRef(null);
+  const sectionRefs = useRef([]);
+  const lastAdvanceRef = useRef(0);
 
-  // Restore previous selections once on mount (sessionStorage is client-only).
+  const { data: currencyContext } = useCurrencyContext();
+  const { data: backendCurrencies } = useSupportedCurrencies();
+  const {
+    data: screenTypesData,
+    isLoading: screenTypesLoading,
+    isError: screenTypesError,
+  } = useCampaignScreenTypes();
+
+  const availableCurrencies = useMemo(() => {
+    const list = Array.isArray(backendCurrencies) && backendCurrencies.length > 0
+      ? [...backendCurrencies]
+      : [...fallbackCurrencies];
+
+    // Ensure IP-detected currency is always selectable in dropdown
+    if (currencyContext?.currencyCode && !list.some((c) => c.code === currencyContext.currencyCode)) {
+      list.unshift({
+        code: currencyContext.currencyCode,
+        symbol: currencyContext.currencySymbol || currencyContext.currencyCode,
+        name: currencyContext.currencyCode,
+        decimals: currencyContext.currencyDecimals ?? 2,
+        locale: currencyContext.currencyLocale || "en-US",
+      });
+    }
+    return list;
+  }, [backendCurrencies, currencyContext]);
+
+  const screenTypeGroups = useMemo(() => {
+    const groups = screenTypesData?.groups || [];
+    return groups.filter((g) => Array.isArray(g.items) && g.items.length > 0);
+  }, [screenTypesData]);
+
+  const allScreenTypes = useMemo(() => screenTypesData?.types || [], [screenTypesData]);
+  const typeLabelMap = useMemo(
+    () => Object.fromEntries(allScreenTypes.map((t) => [t.id, t.label])),
+    [allScreenTypes]
+  );
+
+  // 1. Restore previous selections once on mount from sessionStorage
   useEffect(() => {
     const saved = readPlanner();
     if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from storage
+      if (saved.currency) {
+        savedCurrencyRef.current = saved.currency;
+      }
       setState((s) => ({ ...s, ...pick(saved) }));
     }
-    hydrated.current = true;
   }, []);
 
+  // 2. Apply IP-detected currency ONLY if user has not manually chosen or restored one
+  useEffect(() => {
+    if (!currencyContext?.currencyCode) return;
+    const nextCurrency = resolvePreferredCurrency({
+      manualCurrency: manualCurrencyRef.current,
+      savedCurrency: savedCurrencyRef.current,
+      detectedCurrency: currencyContext.currencyCode,
+      fallback: DEFAULT_CURRENCY,
+    });
+    setState((s) => (s.currency === nextCurrency ? s : { ...s, currency: nextCurrency }));
+  }, [currencyContext]);
+
   const update = (patch, field) => {
-    setState((s) => ({ ...s, ...patch }));
+    setState((s) => {
+      const next = { ...s, ...patch };
+      savePlanner(next);
+      return next;
+    });
     if (field) track(EVENTS.PLANNER_CHANGE, { section: "planner", field });
   };
 
-  const typeLabels = Object.fromEntries(screenTypes.map((t) => [t.id, t.label]));
+  const handleCurrencyChange = (nextCode) => {
+    manualCurrencyRef.current = nextCode;
+    // Preserve entered budget amount without silently converting
+    update({ currency: nextCode }, "currency");
+  };
 
-  const matches = useMemo(
-    () =>
-      screens.filter(
-        (s) =>
-          (state.area === "any" || s.area === state.area) &&
-          (state.types.length === 0 || state.types.includes(s.type))
-      ),
-    [state.area, state.types]
-  );
+  const handleBudgetChange = (raw) => {
+    if (raw === "") {
+      setBudgetError("");
+      update({ budget: "" });
+      return;
+    }
+    const num = Number(raw);
+    if (!Number.isFinite(num) || num < 0) {
+      setBudgetError("Enter a valid non-negative budget or leave it blank.");
+      return;
+    }
+    setBudgetError("");
+    update({ budget: num });
+  };
 
-  const budgetOk = Number(state.budget) > 0;
+  const advanceToSection = (targetIndex) => {
+    const now = Date.now();
+    if (now - lastAdvanceRef.current < 250) return; // Prevent rapid duplicate progression
+    lastAdvanceRef.current = now;
+
+    if (budgetError) return;
+
+    const targetEl = sectionRefs.current[targetIndex];
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      const focusable = targetEl.querySelector("input, select, button");
+      focusable?.focus({ preventScroll: true });
+    } else {
+      proceed();
+    }
+  };
+
+  const handleSectionKeyDown = (e, currentIndex) => {
+    if (e.key !== "Enter") return;
+
+    const tag = e.target?.tagName?.toLowerCase();
+    // Never hijack Enter in textareas, buttons, or open location combobox
+    if (tag === "textarea" || tag === "button") return;
+    if (e.target?.closest?.('[data-location-combobox="open"]')) return;
+
+    e.preventDefault();
+    advanceToSection(currentIndex + 1);
+  };
+
+  const hasBudget = state.budget !== "" && Number(state.budget) > 0;
+  const activeCurrencyMeta = availableCurrencies.find((c) => c.code === state.currency);
 
   const proceed = () => {
+    if (budgetError) return;
     savePlanner({ ...state, screens: readPlanner()?.screens });
     track(EVENTS.PLANNER_SUBMIT, {
       section: "planner",
@@ -85,6 +213,12 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
     }
   };
 
+  const selectedAreaDisplay = state.location?.label
+    ? `${state.location.label}${state.location.parent_label ? `, ${state.location.parent_label}` : ""}`
+    : state.area === "any" || !state.area
+      ? "Any / to be advised"
+      : state.area;
+
   return (
     <section className={`section ${lead ? "section--lead" : ""} ${styles.section}`} id="planner" aria-labelledby={`${id}-title`}>
       <div className="container">
@@ -99,10 +233,14 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
 
         <Reveal className={styles.shell} variant="scale">
           <form className={styles.form} onSubmit={(e) => { e.preventDefault(); proceed(); }}>
-            {/* Budget */}
-            <fieldset className={styles.group}>
+            {/* 01 Budget & IP-Based Currency */}
+            <fieldset
+              className={styles.group}
+              ref={(el) => { sectionRefs.current[0] = el; }}
+              onKeyDown={(e) => handleSectionKeyDown(e, 0)}
+            >
               <legend className={styles.legend}>
-                <span>01</span> Budget
+                <span>01</span> Budget <span className="muted" style={{ fontWeight: 400, fontSize: "0.85em" }}>(optional)</span>
               </legend>
               <div className={styles.budgetRow}>
                 <label className="visually-hidden" htmlFor={`${id}-cur`}>Currency</label>
@@ -110,10 +248,12 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                   id={`${id}-cur`}
                   className={`input ${styles.currency}`}
                   value={state.currency}
-                  onChange={(e) => update({ currency: e.target.value }, "currency")}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
                 >
-                  {currencies.map((c) => (
-                    <option key={c.code} value={c.code}>{c.code}</option>
+                  {availableCurrencies.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({c.symbol.trim()})
+                    </option>
                   ))}
                 </select>
                 <label className="visually-hidden" htmlFor={`${id}-budget`}>Total budget</label>
@@ -124,11 +264,16 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                   inputMode="numeric"
                   min="0"
                   step="50"
+                  placeholder="Optional budget"
                   value={state.budget}
-                  onChange={(e) => update({ budget: e.target.value === "" ? "" : Math.max(0, Number(e.target.value)) })}
+                  aria-invalid={Boolean(budgetError)}
+                  onChange={(e) => handleBudgetChange(e.target.value)}
                   onBlur={() => track(EVENTS.PLANNER_BUDGET, { section: "planner", currency: state.currency })}
                 />
               </div>
+              {budgetError && (
+                <p role="alert" className={styles.warn}>{budgetError}</p>
+              )}
               <input
                 type="range"
                 className={styles.range}
@@ -137,18 +282,40 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                 step={budgetSlider.step}
                 value={Math.min(Number(state.budget) || 0, budgetSlider.max)}
                 style={{ "--p": `${(Math.min(Number(state.budget) || 0, budgetSlider.max) / budgetSlider.max) * 100}%` }}
-                onChange={(e) => update({ budget: Number(e.target.value) })}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setBudgetError("");
+                  update({ budget: val === 0 ? "" : val });
+                }}
                 onPointerUp={() => track(EVENTS.PLANNER_BUDGET, { section: "planner", currency: state.currency })}
                 aria-label="Budget slider"
               />
               <div className={styles.rangeScale} aria-hidden="true">
-                <span>{formatBudget(budgetSlider.min, state.currency)}</span>
-                <span>{formatBudget(budgetSlider.max, state.currency)}+</span>
+                <span>{formatBudget(budgetSlider.min, state.currency, availableCurrencies)}</span>
+                <span>{formatBudget(budgetSlider.max, state.currency, availableCurrencies)}+</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: 12 }}>
+                <span className="muted" style={{ fontSize: "0.8rem" }}>
+                  {currencyContext?.countryCode && !manualCurrencyRef.current && !savedCurrencyRef.current
+                    ? `Currency auto-detected for ${currencyContext.countryCode} (${activeCurrencyMeta?.symbol?.trim() || state.currency})`
+                    : `Currency: ${state.currency} (${activeCurrencyMeta?.symbol?.trim() || state.currency})`}
+                </span>
+                <button
+                  type="button"
+                  className="chip"
+                  onClick={() => advanceToSection(1)}
+                >
+                  Next →
+                </button>
               </div>
             </fieldset>
 
-            {/* Duration */}
-            <fieldset className={styles.group}>
+            {/* 02 Duration */}
+            <fieldset
+              className={styles.group}
+              ref={(el) => { sectionRefs.current[1] = el; }}
+              onKeyDown={(e) => handleSectionKeyDown(e, 1)}
+            >
               <legend className={styles.legend}>
                 <span>02</span> Campaign duration
               </legend>
@@ -176,49 +343,103 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
                   onChange={(e) => update({ startDate: e.target.value }, "startDate")}
                 />
               </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                <button type="button" className="chip" onClick={() => advanceToSection(2)}>
+                  Next →
+                </button>
+              </div>
             </fieldset>
 
-            {/* Location & screens */}
-            <fieldset className={styles.group}>
+            {/* 03 Dynamic Location Search & Dynamic Advertising Screen Types */}
+            <fieldset
+              className={styles.group}
+              ref={(el) => { sectionRefs.current[2] = el; }}
+              onKeyDown={(e) => handleSectionKeyDown(e, 2)}
+            >
               <legend className={styles.legend}>
-                <span>03</span> Location & screens
+                <span>03</span> Location &amp; screens
               </legend>
               <div className="field">
-                <label htmlFor={`${id}-area`}>Preferred area</label>
-                <select
+                <label htmlFor={`${id}-area`}>Preferred area <span className="muted">(optional)</span></label>
+                <LocationSearchSelect
                   id={`${id}-area`}
-                  className="input"
-                  value={state.area}
-                  onChange={(e) => update({ area: e.target.value }, "area")}
-                >
-                  <option value="any">Any area / not sure</option>
-                  {areas.map((a) => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
+                  value={state.location}
+                  areaLabel={state.area}
+                  onSelect={(loc) =>
+                    update(
+                      {
+                        area: loc.label,
+                        location: loc,
+                      },
+                      "area"
+                    )
+                  }
+                  onClear={() =>
+                    update(
+                      {
+                        area: "any",
+                        location: null,
+                      },
+                      "area"
+                    )
+                  }
+                />
               </div>
-              <p className={styles.subLabel}>Screen types</p>
-              <div className={styles.options}>
-                {screenTypes.map((t) => (
-                  <label key={t.id} className={styles.option}>
-                    <input
-                      type="checkbox"
-                      checked={state.types.includes(t.id)}
-                      onChange={() =>
-                        update(
-                          { types: state.types.includes(t.id) ? state.types.filter((x) => x !== t.id) : [...state.types, t.id] },
-                          "types"
-                        )
-                      }
-                    />
-                    <span>{t.label}</span>
-                  </label>
-                ))}
+
+              <p className={styles.subLabel}>Screen types <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></p>
+              {screenTypesLoading ? (
+                <p className="muted" role="status" style={{ fontSize: "0.875rem" }}>
+                  Loading available advertising screen formats…
+                </p>
+              ) : screenTypesError || screenTypeGroups.length === 0 ? (
+                <p className="muted" role="status" style={{ fontSize: "0.875rem" }}>
+                  Screen format options are temporarily unavailable. You can still continue and our team will recommend suitable screens.
+                </p>
+              ) : (
+                <div style={{ display: "grid", gap: 14 }}>
+                  {screenTypeGroups.map((group) => (
+                    <div key={group.id}>
+                      <p className="muted" style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+                        {group.label}
+                      </p>
+                      <div className={styles.options}>
+                        {group.items.map((t) => (
+                          <label key={t.id} className={styles.option}>
+                            <input
+                              type="checkbox"
+                              checked={state.types.includes(t.id)}
+                              onChange={() =>
+                                update(
+                                  {
+                                    types: state.types.includes(t.id)
+                                      ? state.types.filter((x) => x !== t.id)
+                                      : [...state.types, t.id],
+                                  },
+                                  "types"
+                                )
+                              }
+                            />
+                            <span>{t.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                <button type="button" className="chip" onClick={() => advanceToSection(3)}>
+                  Next →
+                </button>
               </div>
             </fieldset>
 
-            {/* Objective */}
-            <fieldset className={styles.group}>
+            {/* 04 Objective */}
+            <fieldset
+              className={styles.group}
+              ref={(el) => { sectionRefs.current[3] = el; }}
+              onKeyDown={(e) => handleSectionKeyDown(e, 3)}
+            >
               <legend className={styles.legend}>
                 <span>04</span> Main objective
               </legend>
@@ -243,18 +464,25 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
           <aside className={styles.summary} aria-live="polite" aria-label="Your campaign brief">
             <p className={styles.summaryEyebrow}>Your campaign brief</p>
             <div className={styles.bigBudget} key={`${state.currency}-${state.budget}`}>
-              {budgetOk ? formatBudget(state.budget, state.currency) : "—"}
+              {hasBudget ? formatBudget(state.budget, state.currency, availableCurrencies) : "Flexible"}
             </div>
-            <p className={styles.budgetCaption}>Total budget · {durations.find((d) => d.id === state.duration)?.label}</p>
+            <p className={styles.budgetCaption}>
+              {hasBudget ? `Total budget (${state.currency})` : `Budget to be advised (${state.currency})`} ·{" "}
+              {durations.find((d) => d.id === state.duration)?.label}
+            </p>
 
             <dl className={styles.brief}>
               <div>
-                <dt>Area</dt>
-                <dd>{state.area === "any" ? "Any / to be advised" : state.area}</dd>
+                <dt>Location</dt>
+                <dd>{selectedAreaDisplay}</dd>
               </div>
               <div>
                 <dt>Screens</dt>
-                <dd>{state.types.length ? state.types.map((t) => typeLabels[t]).join(", ") : "Any type"}</dd>
+                <dd>
+                  {state.types.length
+                    ? state.types.map((t) => typeLabelMap[t] || t).join(", ")
+                    : "Any advertising format"}
+                </dd>
               </div>
               <div>
                 <dt>Objective</dt>
@@ -268,40 +496,22 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
               )}
             </dl>
 
-            <div className={styles.matches}>
-              <p className={styles.matchHead}>
-                <strong key={matches.length}>{matches.length}</strong>
-                {` ${isSample ? "sample " : ""}${matches.length === 1 ? "screen fits" : "screens fit"} these filters`}
-              </p>
-              {matches.length === 0 ? (
-                <p className={styles.alt}>
-                  No screens match. Try &ldquo;Any area&rdquo; or another screen type, or send the brief and we will suggest alternatives.
-                </p>
-              ) : (
-                <ul className={styles.matchList}>
-                  {matches.slice(0, 3).map((m) => (
-                    <li key={m.id}>
-                      <Icon name="pin" size={14} /> {m.name}
-                      <span>{m.area.replace("Sample ", "")}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
             {!plannerRules && (
               <p className={styles.disclaimer}>
                 <Icon name="info" size={16} />
                 <span>
-                  Rates are not published yet, so we do not estimate reach or allocation here.
-                  Illuvision will confirm suitable screens, availability and pricing. Sending
+                  Illuvision reviews your brief and confirms suitable screens, availability and pricing. Sending
                   this brief does not reserve a campaign.
                 </span>
               </p>
             )}
-            {!budgetOk && <p className={styles.warn}>Enter a budget to continue.</p>}
 
-            <button type="button" className="btn btn--light btn--block" onClick={proceed} disabled={!budgetOk}>
+            <button
+              type="button"
+              className="btn btn--light btn--block"
+              onClick={proceed}
+              disabled={Boolean(budgetError)}
+            >
               <BtnIcon name="arrow" />
               <span>Continue to enquiry</span>
             </button>
