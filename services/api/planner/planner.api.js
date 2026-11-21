@@ -80,3 +80,27 @@ export async function fetchCampaignScreenTypes(cityIds = [], signal) {
   });
   return json.data || { types: [], groups: [], filtered_by_cities: false, city_ids: [] };
 }
+
+/**
+ * Generate up to three distinct, feasible campaign packages grounded in live backend inventory & pricing.
+ */
+export async function generateCampaignRecommendations(payload, signal) {
+  const json = await api.post("/v1/public/marketplace/campaign/recommendations", payload, { signal });
+  return json.data || { status_code: "ERROR", packages: [], limitations: [] };
+}
+
+/**
+ * Persist an immutable campaign proposal snapshot, generate branded PDF, and return secure links + WhatsApp message.
+ */
+export async function createCampaignProposal(payload, signal) {
+  const json = await api.post("/v1/public/marketplace/campaign/proposals", payload, { signal });
+  return json.data || null;
+}
+
+/**
+ * Fetch an immutable campaign proposal by opaque public token.
+ */
+export async function fetchCampaignProposal(token, signal) {
+  const json = await api.get(`/v1/public/marketplace/campaign/proposals/${encodeURIComponent(token)}`, { signal });
+  return json.data || null;
+}

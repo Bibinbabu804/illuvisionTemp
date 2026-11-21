@@ -7,6 +7,7 @@ import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
 import LocationSearchSelect from "./LocationSearchSelect";
+import CampaignRecommendationModal from "./CampaignRecommendationModal";
 import { currencies as fallbackCurrencies, durations, objectives, budgetSlider, plannerRules } from "@/data/planner";
 import { readPlanner, savePlanner } from "@/lib/plannerStore";
 import {
@@ -71,6 +72,7 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
   const [state, setState] = useState(initial);
   const [budgetError, setBudgetError] = useState("");
   const [prunedNotice, setPrunedNotice] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
   const manualCurrencyRef = useRef(null);
   const savedCurrencyRef = useRef(null);
   const sectionRefs = useRef([]);
@@ -234,6 +236,31 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
 
   const hasBudget = state.budget !== "" && Number(state.budget) > 0;
   const activeCurrencyMeta = availableCurrencies.find((c) => c.code === state.currency);
+
+  const openPlanModal = () => {
+    if (budgetError) return;
+    savePlanner({
+      ...state,
+      city_ids: selectedCityIds,
+      screens: readPlanner()?.screens,
+    });
+    setModalOpen(true);
+  };
+
+  const handleModalSync = (nextPrefs) => {
+    const names = (nextPrefs.locations || []).map((l) => l.name || l.label).filter(Boolean);
+    update({
+      budget: nextPrefs.budget,
+      currency: nextPrefs.currency,
+      duration: nextPrefs.duration,
+      startDate: nextPrefs.startDate,
+      locations: nextPrefs.locations || [],
+      location: nextPrefs.locations?.[0] || null,
+      area: names.length > 0 ? names.join(", ") : "any",
+      types: nextPrefs.types || [],
+      objective: nextPrefs.objective || state.objective,
+    });
+  };
 
   const proceed = () => {
     if (budgetError) return;
@@ -597,15 +624,32 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
             <button
               type="button"
               className="btn btn--light btn--block"
-              onClick={proceed}
+              onClick={openPlanModal}
               disabled={Boolean(budgetError)}
             >
               <BtnIcon name="arrow" />
-              <span>Continue to enquiry</span>
+              <span>Plan Campaign</span>
+            </button>
+            <button
+              type="button"
+              className="text-link"
+              onClick={proceed}
+              disabled={Boolean(budgetError)}
+              style={{ marginTop: 10, fontSize: "0.82rem", width: "100%", textAlign: "center", color: "inherit", opacity: 0.78 }}
+            >
+              Or continue directly to enquiry form →
             </button>
           </aside>
         </Reveal>
       </div>
+
+      <CampaignRecommendationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        plannerState={state}
+        availableCurrencies={availableCurrencies}
+        onSyncPlanner={handleModalSync}
+      />
     </section>
   );
 }
