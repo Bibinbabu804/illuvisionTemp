@@ -6,6 +6,7 @@ import Reveal from "@/components/ui/Reveal";
 import Icon from "@/components/ui/Icon";
 import EnquiryForm from "@/components/forms/EnquiryForm";
 import { site } from "@/data/site";
+import { buildBusinessWhatsAppUrl, buildQuickWhatsAppMessage } from "@/lib/whatsapp";
 import { pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
@@ -17,10 +18,12 @@ export const metadata = pageMetadata({
 
 export default function ContactPage() {
   const { contact } = site;
+  const wa = buildBusinessWhatsAppUrl(buildQuickWhatsAppMessage("general"));
   const items = [
+    wa.ok && { icon: "chat", label: "WhatsApp", value: `Chat on WhatsApp (${contact.whatsapp})`, href: wa.url, external: true },
     contact.email && { icon: "chat", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
     contact.phone && { icon: "chat", label: "Phone", value: contact.phone, href: `tel:${contact.phone.replace(/\s/g, "")}` },
-    contact.phone2 && { icon: "chat", label: "Phone", value: contact.phone2, href: `tel:${contact.phone2.replace(/\s/g, "")}` },
+    contact.phone2 && { icon: "chat", label: "Phone (Alt)", value: contact.phone2, href: `tel:${contact.phone2.replace(/\s/g, "")}` },
     contact.address && { icon: "pin", label: "Address", value: contact.address },
     contact.hours && { icon: "info", label: "Hours", value: contact.hours },
   ].filter(Boolean);
@@ -54,7 +57,16 @@ export default function ContactPage() {
                     <Icon name={i.icon} size={20} />
                     <div>
                       <span>{i.label}</span>
-                      {i.href ? <a href={i.href}>{i.value}</a> : <strong>{i.value}</strong>}
+                      {i.href ? (
+                        <a
+                          href={i.href}
+                          {...(i.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                        >
+                          {i.value}
+                        </a>
+                      ) : (
+                        <strong>{i.value}</strong>
+                      )}
                     </div>
                   </li>
                 ))}

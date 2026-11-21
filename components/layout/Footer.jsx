@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { site } from "@/data/site";
+import { buildBusinessWhatsAppUrl, buildQuickWhatsAppMessage } from "@/lib/whatsapp";
 import { getPublicProductCategories } from "@/services/server/marketplace";
 import { EVENTS } from "@/lib/analytics";
 import { STOCK_CREDIT } from "@/data/media";
@@ -30,7 +31,9 @@ function FLink({ href, children, external }) {
 export default async function Footer() {
   const categories = await getPublicProductCategories();
   const { contact } = site;
+  const wa = buildBusinessWhatsAppUrl(buildQuickWhatsAppMessage("general"));
   const contactItems = [
+    wa.ok && { label: "WhatsApp", href: wa.url, external: true },
     contact.email && { label: contact.email, href: `mailto:${contact.email}` },
     contact.phone && { label: contact.phone, href: `tel:${contact.phone.replace(/\s/g, "")}` },
     contact.phone2 && { label: contact.phone2, href: `tel:${contact.phone2.replace(/\s/g, "")}` },
@@ -107,7 +110,7 @@ export default async function Footer() {
               <h3>Contact</h3>
               <ul>
                 {contactItems.map((item) => (
-                  <li key={item.label}><FLink href={item.href}>{item.label}</FLink></li>
+                  <li key={item.label}><FLink href={item.href} external={item.external}>{item.label}</FLink></li>
                 ))}
                 {contact.address && <li className={styles.plain}>{contact.address}</li>}
                 <li><FLink href="/contact">Send an enquiry</FLink></li>

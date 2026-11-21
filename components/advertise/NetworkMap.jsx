@@ -8,6 +8,7 @@ import { screenTypes, statuses, cities, mapConfig } from "@/data/network";
 import { extractDynamicAreas } from "@/lib/networkScreens";
 import { track, EVENTS } from "@/lib/analytics";
 import { savePlanner } from "@/lib/plannerStore";
+import { buildBusinessWhatsAppUrl, buildScreenMapInquiryMessage } from "@/lib/whatsapp";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import styles from "./NetworkMap.module.css";
@@ -445,10 +446,34 @@ export default function NetworkMap({
               </p>
               <div className={styles.detailFoot}>
                 <span className="badge">{statuses[selectedScreen.status].label}</span>
-                <a href={enquiryHref} className="btn btn--sm" onClick={() => enquire(selectedScreen)}>
-                  <BtnIcon name="arrow" />
-                  <span>Enquire</span>
-                </a>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  {(() => {
+                    const screenWa = buildBusinessWhatsAppUrl(
+                      buildScreenMapInquiryMessage({
+                        screenName: selectedScreen.name,
+                        screenType: typeLabel[selectedScreen.type] || selectedScreen.type,
+                        venue: selectedScreen.venue,
+                        area: selectedScreen.area,
+                        pageUrl: typeof window !== "undefined" ? window.location.href : "",
+                      })
+                    );
+                    return screenWa.ok ? (
+                      <a
+                        href={screenWa.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn--accent btn--sm"
+                      >
+                        <BtnIcon name="arrow" />
+                        <span>WhatsApp</span>
+                      </a>
+                    ) : null;
+                  })()}
+                  <a href={enquiryHref} className="btn btn--sm" onClick={() => enquire(selectedScreen)}>
+                    <BtnIcon name="arrow" />
+                    <span>Enquire</span>
+                  </a>
+                </div>
               </div>
             </motion.div>
           )}

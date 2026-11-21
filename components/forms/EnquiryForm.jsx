@@ -5,6 +5,12 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
 import { submitEnquiry, validate } from "@/lib/enquiry";
+import {
+  buildBusinessWhatsAppUrl,
+  buildContactInquiryMessage,
+  buildAdvertisingInquiryMessage,
+  buildProductInquiryMessage,
+} from "@/lib/whatsapp";
 import { readPlanner, onPlannerChange } from "@/lib/plannerStore";
 import { currencies, durations, objectives } from "@/data/planner";
 import { screenTypes } from "@/data/network";
@@ -131,8 +137,55 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
     try {
       const payload = { ...values, enquirySource: values.source || "website", ...(product && { sku: product.sku, product: product.name }) };
       const res = await submitEnquiry(variant, payload);
-      setResult(res);
+
+      // Build contextual WhatsApp message from the validated form values
+      const durLabel = durations.find((d) => d.id === values.duration)?.label || values.duration;
+      let waMessage = "";
+      if (variant === "advertising") {
+        waMessage = buildAdvertisingInquiryMessage({
+          location: values.location,
+          budget: values.budget,
+          currency: values.currency,
+          durationLabel: durLabel,
+          preferences: values.preferences,
+          name: values.name,
+          company: values.company,
+          email: values.email,
+          phone: values.phone,
+        });
+      } else if (variant === "product") {
+        waMessage = buildProductInquiryMessage({
+          productName: product?.name || values.product || "Digital Display Screen",
+          productUrl: typeof window !== "undefined" ? window.location.href : "",
+          variantLabel: values.variantLabel || values.sku || product?.sku || "",
+          pricingTier: values.pricing_tier,
+          quantity: values.quantity,
+          deliveryLocation: values.deliveryLocation,
+          name: values.name,
+          company: values.company,
+          email: values.email,
+          phone: values.phone,
+          message: values.message,
+        });
+      } else {
+        waMessage = buildContactInquiryMessage({
+          name: values.name,
+          company: values.company,
+          email: values.email,
+          phone: values.phone,
+          topic: values.topic,
+          message: values.message,
+        });
+      }
+
+      const wa = buildBusinessWhatsAppUrl(waMessage);
+      setResult({ ...res, whatsappUrl: wa.ok ? wa.url : null, whatsappError: wa.ok ? null : wa.error });
       setStatus("done");
+
+      if (wa.ok && wa.url && typeof window !== "undefined") {
+        window.open(wa.url, "_blank", "noopener,noreferrer");
+      }
+
       const event = { advertising: EVENTS.AD_ENQUIRY, product: EVENTS.PRODUCT_ENQUIRY, contact: EVENTS.CONTACT_SUBMIT }[variant];
       // No personal data in analytics.
       track(event, { section: "enquiry", ...(product && { sku: product.sku }), ...(variant === "advertising" && { currency: values.currency, duration: values.duration }) });
@@ -146,13 +199,30 @@ export default function EnquiryForm({ variant = "contact", product, defaults = {
       <div className={styles.success} role="status" tabIndex={-1} ref={(el) => el?.focus()}>
         <span className={styles.successIcon}><Icon name="check" size={28} strokeWidth={2.4} /></span>
         <h3>Thanks, {values.name.split(" ")[0] || "we've got it"}.</h3>
-        {result?.preview ? (
+        {result?.whatsappUrl ? (
+          <p>
+            Your {variant === "advertising" ? "campaign enquiry" : "enquiry"} has been recorded and a prefilled WhatsApp message is ready. Review the message in WhatsApp and press <strong>Send</strong> to connect with our team immediately.
+          </p>
+        ) : result?.preview ? (
           <p>
             Your enquiry passed all checks. <strong>Preview mode:</strong> this website is not yet
             connected to Illuvision&rsquo;s enquiry system, so nothing has been sent or stored.
           </p>
         ) : (
           <p>The Illuvision team will review your {variant === "advertising" ? "brief" : "enquiry"} and get back to you.</p>
+        )}
+        {result?.whatsappUrl && (
+          <div style={{ margin: "12px 0" }}>
+            <a
+              href={result.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--accent"
+            >
+              <BtnIcon name="arrow" />
+              <span>Open WhatsApp</span>
+            </a>
+          </div>
         )}
         {variant === "advertising" && (
           <p className="muted">Submitting this form does not reserve or book a campaign.</p>
