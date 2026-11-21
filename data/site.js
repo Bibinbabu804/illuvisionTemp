@@ -110,7 +110,7 @@ export const faqs = {
     },
     {
       q: "Are the screens on the map real locations?",
-      a: "Not yet. The map currently shows sample data to demonstrate how browsing the network will work. Real, publicly approved locations will replace it.",
+      a: "Yes. The map displays active screens from Illuvision's advertising screen network across cities. Final slot availability, playback schedules and pricing are confirmed in writing by our team before any campaign goes live.",
     },
     {
       q: "What budget do I need?",

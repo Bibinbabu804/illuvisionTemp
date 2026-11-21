@@ -45,10 +45,14 @@ const scenes = [
   },
 ];
 
-export default function Showcase({ index }) {
+export default function Showcase({ index, products = [] }) {
   const [active, setActive] = useState(0);
   const scene = scenes[active];
-  const product = getProduct(scene.product);
+  // Prefer live Marketplace Product from backend; fall back to static reference only if unavailable
+  const liveProduct = Array.isArray(products)
+    ? products.find((p) => p.slug === scene.product) || null
+    : null;
+  const product = liveProduct || getProduct(scene.product);
   // Auto-advance: each active tab's progress bar runs for 6s, then moves on.
   // Paused while off-screen, hovered or focused, and stops after a manual pick.
   const stageRef = useRef(null);

@@ -63,7 +63,7 @@ export default async function HomePage() {
       <ScrollScale>
         <WhySection index={7} />
       </ScrollScale>
-      <Showcase index={8} />
+      <Showcase index={8} products={heroProducts} />
       <SpecGuide index={9} />
       <NetworkOption />
       <PartnerEarn />
