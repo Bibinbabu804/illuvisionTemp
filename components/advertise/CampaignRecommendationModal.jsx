@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
 import BtnIcon from "@/components/ui/BtnIcon";
-import LocationSearchSelect from "./LocationSearchSelect";
 import { durations, objectives } from "@/data/planner";
 import { site } from "@/data/site";
 import { scrollLock } from "@/components/motion/SmoothScroll";
@@ -12,7 +11,6 @@ import {
   generateCampaignRecommendations,
   createCampaignProposal,
 } from "@/services/api/planner/planner.api";
-import { useCampaignScreenTypes } from "@/services/api/planner/planner.queries";
 import { track, EVENTS } from "@/lib/analytics";
 import styles from "./CampaignRecommendationModal.module.css";
 
@@ -29,18 +27,8 @@ export default function CampaignRecommendationModal({
   onClose,
   plannerState,
   availableCurrencies = [],
-  onSyncPlanner,
 }) {
   const dialogRef = useRef(null);
-  const [prefs, setPrefs] = useState({
-    budget: "",
-    currency: "INR",
-    duration: "1m",
-    startDate: "",
-    locations: [],
-    types: [],
-    objective: "awareness",
-  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,21 +42,13 @@ export default function CampaignRecommendationModal({
   const [proposalError, setProposalError] = useState("");
   const idemKeyRef = useRef(new Map());
 
-  // Sync latest planner state whenever modal opens
-  useEffect(() => {
-    if (!open) return;
-    setPrefs({
-      budget: plannerState?.budget ?? "",
-      currency: plannerState?.currency || "INR",
-      duration: plannerState?.duration || "1m",
-      startDate: plannerState?.startDate || "",
-      locations: Array.isArray(plannerState?.locations) ? plannerState.locations : [],
-      types: Array.isArray(plannerState?.types) ? plannerState.types : [],
-      objective: plannerState?.objective || "awareness",
-    });
-    setError("");
-    setProposalError("");
-  }, [open, plannerState]);
+  const selectedCityIds = useMemo(
+    () =>
+      (plannerState?.locations || [])
+        .map((l) => Number(l.city_id ?? l.id))
+        .filter((n) => n > 0),
+    [plannerState?.locations]
+  );
 
   // Native <dialog> open/close + scroll lock
   useEffect(() => {
@@ -86,56 +66,54 @@ export default function CampaignRecommendationModal({
     return () => scrollLock(false);
   }, [open]);
 
-  const selectedCityIds = useMemo(
-    () => (prefs.locations || []).map((l) => Number(l.city_id ?? l.id)).filter((n) => n > 0),
-    [prefs.locations]
+  const fetchPlans = useCallback(
+    async (signal) => {
+      setError("");
+      setProposalError("");
+      setProposalResult(null);
+      setLoading(true);
+      idemKeyRef.current.clear();
+
+      try {
+        const payload = {
+          budget:
+            plannerState?.budget !== "" && Number(plannerState?.budget) > 0
+              ? Number(plannerState.budget)
+              : null,
+          currency: plannerState?.currency || "INR",
+          duration: plannerState?.duration || "1m",
+          start_date: plannerState?.startDate || null,
+          city_ids: selectedCityIds,
+          screen_types: plannerState?.types || [],
+          objective: plannerState?.objective || "awareness",
+        };
+
+        const data = await generateCampaignRecommendations(payload, signal);
+        if (signal?.aborted) return;
+        setResult(data);
+        track(EVENTS.PLANNER_SUBMIT, {
+          section: "campaign-recommendation-modal",
+          currency: payload.currency,
+          city_count: selectedCityIds.length,
+          package_count: data?.packages?.length || 0,
+        });
+      } catch (err) {
+        if (signal?.aborted) return;
+        setError(err?.message || "Unable to analyze campaign plans right now. Please try again.");
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [plannerState, selectedCityIds]
   );
 
-  const { data: screenTypesData } = useCampaignScreenTypes(selectedCityIds, { enabled: open });
-  const availableTypes = useMemo(() => screenTypesData?.types || [], [screenTypesData]);
-
-  const updatePref = (patch) => {
-    setPrefs((prev) => {
-      const next = { ...prev, ...patch };
-      onSyncPlanner?.(next);
-      return next;
-    });
-    setProposalResult(null);
-    idemKeyRef.current.clear();
-  };
-
-  const handleFindPlans = async () => {
-    setError("");
-    setProposalError("");
-    setProposalResult(null);
-    setLoading(true);
-    idemKeyRef.current.clear();
-
-    try {
-      const payload = {
-        budget: prefs.budget !== "" && Number(prefs.budget) > 0 ? Number(prefs.budget) : null,
-        currency: prefs.currency || "INR",
-        duration: prefs.duration || "1m",
-        start_date: prefs.startDate || null,
-        city_ids: selectedCityIds,
-        screen_types: prefs.types || [],
-        objective: prefs.objective || "awareness",
-      };
-
-      const data = await generateCampaignRecommendations(payload);
-      setResult(data);
-      track(EVENTS.PLANNER_SUBMIT, {
-        section: "campaign-recommendation-modal",
-        currency: payload.currency,
-        city_count: selectedCityIds.length,
-        package_count: data?.packages?.length || 0,
-      });
-    } catch (err) {
-      setError(err?.message || "Unable to analyze campaign plans right now. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Automatically generate recommendations as soon as the modal opens
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    fetchPlans(controller.signal);
+    return () => controller.abort();
+  }, [open, fetchPlans]);
 
   const handleEnquireNow = async (pkg) => {
     setProposalError("");
@@ -147,7 +125,6 @@ export default function CampaignRecommendationModal({
 
     setCreatingKey(pkg.key);
     try {
-      // Stable idempotency key per (recommendation + package) to prevent duplicate DB records on double-click
       let idemKey = idemKeyRef.current.get(pkg.key);
       if (!idemKey) {
         idemKey = `prop_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -160,7 +137,7 @@ export default function CampaignRecommendationModal({
       const created = await createCampaignProposal({
         selected_package: pkg,
         alternative_packages: alternatives,
-        preferences: result?.preferences || prefs,
+        preferences: result?.preferences || plannerState,
         idempotency_key: idemKey,
         frontend_origin: frontendOrigin,
       });
@@ -191,6 +168,27 @@ export default function CampaignRecommendationModal({
 
   const packages = result?.packages || [];
 
+  // Compact summary chips of the brief already entered in the main Campaign Planner form
+  const currencyMeta = availableCurrencies.find((c) => c.code === (plannerState?.currency || "INR"));
+  const budgetText =
+    plannerState?.budget !== "" && Number(plannerState?.budget) > 0
+      ? formatMoney(
+          plannerState.budget,
+          currencyMeta?.symbol || `${plannerState.currency || "INR"} `,
+          currencyMeta?.decimals ?? 0,
+          currencyMeta?.locale || "en-IN"
+        )
+      : `Flexible (${plannerState?.currency || "INR"})`;
+  const durationText = durations.find((d) => d.id === plannerState?.duration)?.label || "1 month";
+  const objectiveText = objectives.find((o) => o.id === plannerState?.objective)?.label || "Brand awareness";
+  const cityNames = (plannerState?.locations || []).map((l) => l.name || l.label).filter(Boolean);
+  const citiesSummary =
+    cityNames.length === 0
+      ? "Any location"
+      : cityNames.length <= 3
+        ? cityNames.join(", ")
+        : `${cityNames.slice(0, 3).join(", ")} +${cityNames.length - 3} more`;
+
   return (
     <dialog
       ref={dialogRef}
@@ -207,155 +205,46 @@ export default function CampaignRecommendationModal({
       <div className={styles.frame} data-lenis-prevent>
         {/* Header */}
         <header className={styles.header}>
-          <div>
-            <p className={styles.eyebrow}>Illuvision Campaign Strategist</p>
-            <h2 id="campaign-modal-title" className={styles.title}>
-              Let&rsquo;s Plan Your Advertising Campaign
-            </h2>
-            <p className={styles.subtitle}>
-              Tell us your advertising goals and budget. We&rsquo;ll recommend campaign options
-              designed around your preferred locations and audience.
-            </p>
+          <div className={styles.headerInner}>
+            <div>
+              <p className={styles.eyebrow}>Illuvision Campaign Strategist</p>
+              <h2 id="campaign-modal-title" className={styles.title}>
+                Your Recommended Campaign Plans
+              </h2>
+              <p className={styles.subtitle}>
+                Tailored advertising packages built from your brief, live screen inventory, and official pricing plans.
+              </p>
+            </div>
+            <button
+              type="button"
+              className={styles.closeBtn}
+              aria-label="Close campaign recommendations"
+              onClick={onClose}
+            >
+              <Icon name="close" size={18} />
+            </button>
           </div>
-          <button
-            type="button"
-            className={styles.closeBtn}
-            aria-label="Close campaign planner"
-            onClick={onClose}
-          >
-            <Icon name="close" size={18} />
-          </button>
         </header>
 
         <div className={styles.body}>
-          {/* Campaign Preferences (reuses Planner state, editable before or after generation) */}
-          <section className={styles.prefsCard} aria-label="Campaign preferences">
-            <div className={styles.prefsTop}>
-              <h3 className={styles.prefsTitle}>Your Campaign Preferences</h3>
-              <span className="muted" style={{ fontSize: "0.78rem" }}>
-                Synced with your current brief — adjust anytime
+          <div className={styles.bodyInner}>
+          {/* Compact Brief Summary Strip + Compare / Edit actions */}
+          <div className={styles.summaryStrip}>
+            <div className={styles.summaryTags}>
+              <span className={styles.summaryTag}>
+                <strong>Budget:</strong> {budgetText}
+              </span>
+              <span className={styles.summaryTag}>
+                <strong>Duration:</strong> {durationText}
+              </span>
+              <span className={styles.summaryTag}>
+                <strong>Cities:</strong> {citiesSummary}
+              </span>
+              <span className={styles.summaryTag}>
+                <strong>Goal:</strong> {objectiveText}
               </span>
             </div>
-
-            <div className={styles.prefsGrid}>
-              <div className="field">
-                <label htmlFor="modal-budget">Target budget <span className="muted">(optional)</span></label>
-                <div className={styles.budgetPair}>
-                  <select
-                    aria-label="Currency"
-                    className="input"
-                    value={prefs.currency}
-                    onChange={(e) => updatePref({ currency: e.target.value })}
-                  >
-                    {(availableCurrencies.length ? availableCurrencies : [{ code: "INR", symbol: "₹" }]).map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.code} ({c.symbol?.trim() || c.code})
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    id="modal-budget"
-                    type="number"
-                    min="0"
-                    step="500"
-                    className="input"
-                    placeholder="Flexible"
-                    value={prefs.budget}
-                    onChange={(e) =>
-                      updatePref({ budget: e.target.value === "" ? "" : Math.max(0, Number(e.target.value)) })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="field">
-                <label htmlFor="modal-duration">Duration</label>
-                <select
-                  id="modal-duration"
-                  className="input"
-                  value={prefs.duration}
-                  onChange={(e) => updatePref({ duration: e.target.value })}
-                >
-                  {durations.map((d) => (
-                    <option key={d.id} value={d.id}>{d.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label htmlFor="modal-objective">Objective</label>
-                <select
-                  id="modal-objective"
-                  className="input"
-                  value={prefs.objective}
-                  onChange={(e) => updatePref({ objective: e.target.value })}
-                >
-                  {objectives.map((o) => (
-                    <option key={o.id} value={o.id}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="field">
-              <label htmlFor="modal-locations">Preferred cities <span className="muted">(optional)</span></label>
-              <LocationSearchSelect
-                id="modal-locations"
-                selectedLocations={prefs.locations}
-                onAdd={(loc) => {
-                  const cid = String(loc.city_id ?? loc.id);
-                  if (prefs.locations.some((x) => String(x.city_id ?? x.id) === cid)) return;
-                  updatePref({ locations: [...prefs.locations, loc] });
-                }}
-                onRemove={(cid) =>
-                  updatePref({
-                    locations: prefs.locations.filter((x) => String(x.city_id ?? x.id) !== String(cid)),
-                  })
-                }
-                onClearAll={() => updatePref({ locations: [] })}
-              />
-            </div>
-
-            {availableTypes.length > 0 && (
-              <div className="field">
-                <label>Preferred screen formats <span className="muted">(optional)</span></label>
-                <div className={styles.typeChips}>
-                  {availableTypes.slice(0, 12).map((t) => {
-                    const active = prefs.types.includes(t.id);
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        className={styles.typeChip}
-                        data-active={active ? "true" : undefined}
-                        onClick={() =>
-                          updatePref({
-                            types: active
-                              ? prefs.types.filter((x) => x !== t.id)
-                              : [...prefs.types, t.id],
-                          })
-                        }
-                      >
-                        {active && <Icon name="check" size={12} />}
-                        <span>{t.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className={styles.actionRow}>
-              <button
-                type="button"
-                className="btn btn--accent"
-                disabled={loading}
-                onClick={handleFindPlans}
-              >
-                <BtnIcon name="arrow" />
-                <span>{loading ? "Analyzing campaign options…" : "Find My Campaign Plans"}</span>
-              </button>
-
+            <div className={styles.summaryActions}>
               {packages.length > 1 && (
                 <button
                   type="button"
@@ -365,8 +254,11 @@ export default function CampaignRecommendationModal({
                   {showCompare ? "Hide Comparison" : "Compare Packages"}
                 </button>
               )}
+              <button type="button" className="chip" onClick={onClose}>
+                Edit Brief
+              </button>
             </div>
-          </section>
+          </div>
 
           {/* Purposeful Loading State */}
           {loading && (
@@ -385,14 +277,22 @@ export default function CampaignRecommendationModal({
           {error && (
             <div className={styles.noticeBox} role="alert">
               <strong>Could not generate recommendations:</strong> {error}
+              <div style={{ marginTop: 10 }}>
+                <button type="button" className="chip" onClick={() => fetchPlans()}>
+                  Try again
+                </button>
+              </div>
             </div>
           )}
 
           {/* Empty / Insufficient Budget Honest Feedback */}
           {!loading && result && packages.length === 0 && (
             <div className={styles.noticeBox} role="status">
-              <strong>No matching packages for this exact combination</strong>
-              <p style={{ margin: "6px 0 0" }}>{result.message}</p>
+              <strong>No matching packages for this exact brief</strong>
+              <p style={{ margin: "6px 0 12px" }}>{result.message}</p>
+              <button type="button" className="chip" onClick={onClose}>
+                Adjust Brief in Planner
+              </button>
             </div>
           )}
 
@@ -503,7 +403,10 @@ export default function CampaignRecommendationModal({
                   <tr>
                     <td><strong>Formats</strong></td>
                     {packages.map((p) => (
-                      <td key={p.key}>{p.formats_included.slice(0, 3).join(", ")}{p.formats_included.length > 3 ? ` +${p.formats_included.length - 3}` : ""}</td>
+                      <td key={p.key}>
+                        {p.formats_included.slice(0, 3).join(", ")}
+                        {p.formats_included.length > 3 ? ` +${p.formats_included.length - 3}` : ""}
+                      </td>
                     ))}
                   </tr>
                   <tr>
@@ -572,7 +475,9 @@ export default function CampaignRecommendationModal({
                       </div>
                       <div className={styles.metric}>
                         <span className={styles.metricLabel}>Formats</span>
-                        <span className={styles.metricVal}>{pkg.formats_included.length} types</span>
+                        <span className={styles.metricVal}>
+                          {pkg.formats_included.length} {pkg.formats_included.length === 1 ? "format" : "formats"}
+                        </span>
                       </div>
                     </div>
 
@@ -580,7 +485,7 @@ export default function CampaignRecommendationModal({
 
                     {pkg.advantages?.length > 0 && (
                       <ul className={styles.bulletList}>
-                        {pkg.advantages.map((adv, i) => (
+                        {pkg.advantages.slice(0, 2).map((adv, i) => (
                           <li key={i}>{adv}</li>
                         ))}
                       </ul>
@@ -588,7 +493,7 @@ export default function CampaignRecommendationModal({
 
                     {pkg.allocation_by_format?.length > 0 && (
                       <div className={styles.allocList}>
-                        {pkg.allocation_by_format.slice(0, 3).map((row) => (
+                        {pkg.allocation_by_format.slice(0, 2).map((row) => (
                           <div key={row.label} className={styles.allocItem}>
                             <span>{row.label} ({row.screen_count})</span>
                             <strong>{formatMoney(row.amount_display, pr.currency_symbol, pr.currency_decimals, locale)}</strong>
@@ -650,7 +555,7 @@ export default function CampaignRecommendationModal({
                     <div className={styles.pkgFooter}>
                       <button
                         type="button"
-                        className={pkg.is_recommended ? "btn btn--accent btn--block" : "btn btn--light btn--block"}
+                        className={pkg.is_recommended ? "btn btn--accent btn--block" : `btn btn--block ${styles.btnDark}`}
                         disabled={Boolean(creatingKey)}
                         onClick={() => handleEnquireNow(pkg)}
                       >
@@ -669,6 +574,7 @@ export default function CampaignRecommendationModal({
               Note: {result.limitations.join(" ")}
             </p>
           )}
+          </div>
         </div>
       </div>
     </dialog>

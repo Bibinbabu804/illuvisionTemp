@@ -247,21 +247,6 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
     setModalOpen(true);
   };
 
-  const handleModalSync = (nextPrefs) => {
-    const names = (nextPrefs.locations || []).map((l) => l.name || l.label).filter(Boolean);
-    update({
-      budget: nextPrefs.budget,
-      currency: nextPrefs.currency,
-      duration: nextPrefs.duration,
-      startDate: nextPrefs.startDate,
-      locations: nextPrefs.locations || [],
-      location: nextPrefs.locations?.[0] || null,
-      area: names.length > 0 ? names.join(", ") : "any",
-      types: nextPrefs.types || [],
-      objective: nextPrefs.objective || state.objective,
-    });
-  };
-
   const proceed = () => {
     if (budgetError) return;
     savePlanner({
@@ -648,7 +633,6 @@ export default function Planner({ inPage = false, index, headingAs = "h2", lead 
         onClose={() => setModalOpen(false)}
         plannerState={state}
         availableCurrencies={availableCurrencies}
-        onSyncPlanner={handleModalSync}
       />
     </section>
   );

@@ -144,7 +144,7 @@ export default function ProposalView({ token }) {
                 <span>Discuss on WhatsApp</span>
               </a>
             )}
-            <a href={proposal.pdf_url} target="_blank" rel="noopener noreferrer" className="btn btn--light">
+            <a href={proposal.pdf_url} target="_blank" rel="noopener noreferrer" className={`btn ${styles.btnDark}`}>
               <BtnIcon name="arrow" />
               <span>Download Proposal PDF</span>
             </a>

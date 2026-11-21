@@ -68,6 +68,19 @@
   align-items: center;
 }
 
+.btnDark {
+  --btn-bg: var(--ink, #0b0d0e);
+  --btn-fg: #ffffff;
+  --btn-icon-bg: var(--green, #22c55e);
+  --btn-icon-fg: var(--ink, #0b0d0e);
+  background: var(--ink, #0b0d0e);
+  color: #ffffff;
+}
+
+.btnDark:hover {
+  background: #1d2225;
+}
+
 .notice {
   padding: 14px 18px;
   border-radius: var(--r-md, 14px);
