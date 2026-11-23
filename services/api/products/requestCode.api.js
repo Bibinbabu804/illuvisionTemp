@@ -1,4 +1,4 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api").replace(/\/+$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.illuvision.varixialabs.com/api").replace(/\/+$/, "");
 
 /**
  * Request a unique backend-persisted Marketplace Product Request Code

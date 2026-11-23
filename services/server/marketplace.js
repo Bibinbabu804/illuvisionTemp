@@ -1,4 +1,4 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api").replace(/\/+$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.illuvision.varixialabs.com/api").replace(/\/+$/, "");
 
 /**
  * Fetch public active product categories with Next.js ISR and tag-based caching.

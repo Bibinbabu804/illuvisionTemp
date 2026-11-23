@@ -1,4 +1,4 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api").replace(/\/+$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.illuvision.varixialabs.com/api").replace(/\/+$/, "");
 
 export async function fetchPublicCategories({ signal } = {}) {
   const res = await fetch(`${API_BASE_URL}/v1/public/marketplace/categories`, {
