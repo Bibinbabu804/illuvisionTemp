@@ -11,7 +11,11 @@ import styles from "@/app/screens/[slug]/page.module.css";
  * and dynamically merges variant-specific overrides when a visitor chooses a variant.
  */
 export default function KeySpecifications({ specifications = [], variants = [], productSlug }) {
-  const [selectedVariantKey, setSelectedVariantKey] = useState(null);
+  const defaultVariantKey =
+    Array.isArray(variants) && variants.length > 0
+      ? `${Number(variants[0].size)}::${String(variants[0].display || "").toLowerCase()}`
+      : null;
+  const [selectedVariantKey, setSelectedVariantKey] = useState(defaultVariantKey);
 
   useEffect(() => {
     const syncFromUrl = () => {
@@ -20,6 +24,8 @@ export default function KeySpecifications({ specifications = [], variants = [], 
       const display = q.get("display");
       if (size && display) {
         setSelectedVariantKey(`${Number(size)}::${String(display).toLowerCase()}`);
+      } else {
+        setSelectedVariantKey(defaultVariantKey);
       }
     };
     const syncFromEvent = (e) => {
@@ -35,7 +41,7 @@ export default function KeySpecifications({ specifications = [], variants = [], 
       window.removeEventListener(SELECT_VARIANT_EVENT, syncFromEvent);
       window.removeEventListener("popstate", syncFromUrl);
     };
-  }, [productSlug]);
+  }, [productSlug, defaultVariantKey]);
 
   const activeVariant = useMemo(() => {
     if (!selectedVariantKey || !Array.isArray(variants)) return null;

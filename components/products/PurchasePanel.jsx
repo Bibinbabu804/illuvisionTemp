@@ -25,18 +25,28 @@ export default function PurchasePanel({ product, categoryName }) {
   const [generatedCode, setGeneratedCode] = useState(null);
 
   // Size + display chosen in a price table (?size=43&display=Panasonic) or
-  // in the picker below. -1 = nothing chosen yet.
+  // in the picker below. Defaults to the first variant on load when available.
   const variants = product.variants || [];
-  const [variantIndex, setVariantIndex] = useState(-1);
+  const [variantIndex, setVariantIndex] = useState(variants.length > 0 ? 0 : -1);
   const findVariant = (size, display) =>
     variants.findIndex((v) => v.size === Number(size) && v.display.toLowerCase() === String(display).toLowerCase());
 
   useEffect(() => {
     const fromUrl = () => {
       const q = new URLSearchParams(window.location.search);
-      if (q.get("size") && q.get("display")) setVariantIndex(findVariant(q.get("size"), q.get("display")));
+      if (q.get("size") && q.get("display")) {
+        const matched = findVariant(q.get("size"), q.get("display"));
+        if (matched >= 0) {
+          setVariantIndex(matched);
+          return;
+        }
+      }
+      setVariantIndex(variants.length > 0 ? 0 : -1);
     };
-    const fromEvent = (e) => setVariantIndex(findVariant(e.detail.size, e.detail.display));
+    const fromEvent = (e) => {
+      const matched = findVariant(e.detail.size, e.detail.display);
+      if (matched >= 0) setVariantIndex(matched);
+    };
     fromUrl();
     window.addEventListener(SELECT_VARIANT_EVENT, fromEvent);
     return () => window.removeEventListener(SELECT_VARIANT_EVENT, fromEvent);
@@ -228,7 +238,6 @@ export default function PurchasePanel({ product, categoryName }) {
               }
             }}
           >
-            <option value={-1}>Choose a size and display</option>
             {variants.map((v, i) => (
               <option key={`${v.size}-${v.display}`} value={i}>
                 {v.size}″ {v.display}
